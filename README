@@ -1,5 +1,5 @@
-Language/Prolog/Yaswi version 0.04
-==================================
+Language::Prolog::Yaswi
+=======================
 
 Language::Prolog::Yaswi provides a bidirectional interface between
 Perl and SWI-Prolog (http://www.swi-prolog.org/)
@@ -35,11 +35,8 @@ bug report!).
 
 BUGS
 
-This is a very early alpha release and lots of bugs should be
-expected.
 
-Specifically, it has been developed and tested only with the 5.1.x
-series of SWI-Prolog.
+Requires SWI-Prolog 5.4.x or newer
 
 Loading of prolog shared libraries doesn't work, this is due to a
 limitation on SWI-Prolog itself.
@@ -52,7 +49,7 @@ MS WINDOWS SUPPORT
 
 This module has been minimal tested under windows, it seems to work,
 and I plan to support it, but the primary development platform
-continues to be Unix.
+continues to be Linux/Unix.
 
 To make it work, the "bin" directory for your SWI-Prolog installation
 will have to be included in your PATH also at runtime (If you get an
@@ -72,10 +69,10 @@ these other modules and libraries:
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003 Salvador Fandiño
+Copyright (C) 2003-2005 Salvador Fandiño
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
+it under the same terms as Perl itself.
 
 SWI-Prolog is distributed under the LGPL/GPL licenses, consult the
 documentation bundled with your copy for details.

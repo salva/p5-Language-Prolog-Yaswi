@@ -12,6 +12,8 @@ SV *call_method__sv(pTHX_ SV *object, char *method) {
     dSP;
     SV *result;
     
+    /* sv_dump(object); */
+
     ENTER;
     SAVETMPS;
     PUSHMARK(SP);

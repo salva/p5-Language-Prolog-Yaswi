@@ -1,4 +1,7 @@
-#!/usr/local/perl/threads/bin/perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 BEGIN {
     require Language::Prolog::Yaswi::Low;
@@ -7,13 +10,7 @@ BEGIN {
 	 @ARGV)
 }
 
-use Data::Dumper;
-
-sub UNIVERSAL::dump {
-    print Dumper shift;
-}
-
-use Language::Prolog::Yaswi;
+use Language::Prolog::Yaswi ':query';
 
 $Language::Prolog::Yaswi::swi_converter->pass_as_opaque('UNIVERSAL');
 

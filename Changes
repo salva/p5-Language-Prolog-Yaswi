@@ -1,5 +1,11 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.06  Feb 13 2005
+	- convert perl magic values correctly
+	- some remaining debugging output supressed
+	- conversion of perl types to prolog rewriten
+	- support por SWI-Prolog versions 5.4.x
+
 0.05  Wed Jan 29 2003
 	- corrections to the docs.
 

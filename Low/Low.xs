@@ -13,20 +13,18 @@
 #include "swi2perl.h"
 #include "perl2swi.h"
 #include "opaque.h"
-#include "frames.h"
 #include "vars.h"
 #include "query.h"
 #include "callperl.h"
 #include "engines.h"
 #include "Low.h"
 
-/* START_MY_CXT */
-
 
 void savestate_Low(pTHX_ pMY_CXT) {
     save_item(c_depth);
     sv_inc(c_depth);
 }
+
 
 MODULE = Language::Prolog::Yaswi::Low   PACKAGE = Language::Prolog::Yaswi::Low   PREFIX = yaswi_
 
@@ -43,14 +41,6 @@ void
 yaswi_CLONE()
 CODE:
     init_cxt(aTHX);
-
-
-SV *
-yaswi_OPAQUE_PREFIX()
-CODE:
-    RETVAL=newSVpv(OPAQUE_PREFIX, 0);
-OUTPUT:
-    RETVAL
 
 
 void
@@ -129,46 +119,46 @@ yaswi_openquery(query_obj, module, ctx_module)
 PREINIT:
     dMY_CXT;
     term_t q, arg0;
-    functor_t functor;
     module_t m, cm;
     predicate_t predicate;
     AV *refs, *cells;
 PPCODE:
     check_prolog(aTHX_ aMY_CXT);
     test_no_query(aTHX_ aMY_CXT);
-    q=perl2swi_sv(aTHX_
-		  query_obj,
-		  refs=(AV *)sv_2mortal((SV *)newAV()),
-		  cells=(AV *)sv_2mortal((SV *)newAV()));
-    if (PL_is_atom(q)) {
-	atom_t name;
-	PL_get_atom(q, &name);
-	functor=PL_new_functor(name, 0);
-	arg0=PL_new_term_ref();
-    }
-    else if (PL_is_compound(q)) {
-	int arity, i;
-	PL_get_functor(q, &functor);
-	arity=PL_functor_arity(functor);
-	arg0=PL_new_term_refs(arity);
-	for (i=0; i<arity; i++) {
-	    PL_unify_arg(i+1, q, arg0+i);
+    push_frame(aTHX_ aMY_CXT);
+    q=PL_new_term_ref();
+    if (pl_unify_perl_sv(aTHX_ q, 
+			 query_obj,
+			 refs=(AV *)sv_2mortal((SV *)newAV()),
+			 cells=(AV *)sv_2mortal((SV *)newAV()))) {
+	functor_t functor;
+	if (PL_get_functor(q, &functor)) {
+	    int arity, i;
+	    arity=PL_functor_arity(functor);
+	    arg0=PL_new_term_refs(arity);
+	    for (i=0; i<arity; i++) {
+		PL_unify_arg(i+1, q, arg0+i);
+	    }
+	    perl2swi_module(aTHX_ ctx_module, &cm);
+	    perl2swi_module(aTHX_ module, &m);
+	    predicate=PL_pred(functor, m);
+	    sv_setiv(c_qid, PL_open_query(cm,
+					  PL_Q_NODEBUG|PL_Q_CATCH_EXCEPTION,
+					  predicate, arg0));
+
+	    sv_setiv(c_query, q);
+	    set_vars(aTHX_ aMY_CXT_ refs, cells);
+	    XPUSHs(sv_2mortal(newRV_inc((SV *)refs)));
+	}
+	else {
+	    pop_frame(aTHX_ aMY_CXT);
+	    croak("unable to convert perl data to prolog query (%_)", query_obj);
 	}
     }
     else {
-	die ("query is unknow\n");
+	pop_frame(aTHX_ aMY_CXT);
+	croak("unable to convert perl data to prolog (%_)", query_obj);
     }
-    perl2swi_module(aTHX_ module, &m);
-    predicate=PL_pred(functor, m);
-    perl2swi_module(aTHX_ ctx_module, &cm);
-    sv_setiv(c_qid, PL_open_query(cm,
-				  PL_Q_NODEBUG|PL_Q_CATCH_EXCEPTION,
-				  predicate, arg0));
-    /* warn("open_query(%_)", qid); */
-    sv_setiv(c_query, q);
-    push_frame(aTHX_ aMY_CXT);
-    set_vars(aTHX_ aMY_CXT_ refs, cells);
-    XPUSHs(sv_2mortal(newRV_inc((SV *)refs)));
 
 void
 yaswi_cutquery()
@@ -177,7 +167,7 @@ PREINIT:
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     test_query(aTHX_ aMY_CXT);
-    cut_query(aTHX_ aMY_CXT);
+    close_query(aTHX_ aMY_CXT);
 
 int
 yaswi_nextsolution()
@@ -187,10 +177,7 @@ CODE:
     check_prolog(aTHX_ aMY_CXT);
     test_query(aTHX_ aMY_CXT); 
     cut_anonymous_vars(aTHX_ aMY_CXT);
-    pop_frame(aTHX_ aMY_CXT);
-    /* warn ("next_solution(qid=%_)", qid); */
     if(PL_next_solution(SvIV(c_qid))) {
-	push_frame(aTHX_ aMY_CXT);
 	RETVAL=1;
     }
     else {
@@ -205,7 +192,6 @@ CODE:
 					  get_cells(aTHX_ aMY_CXT))));
 	    close_query(aTHX_ aMY_CXT);
 	    croak(Nullch);
-	    /* croak ("exception pop up from Prolog"); */
 	}
 	else {
 	    close_query(aTHX_ aMY_CXT);
@@ -233,3 +219,5 @@ CODE:
     RETVAL=(IV) SvRV(rv);
 OUTPUT:
     RETVAL
+
+

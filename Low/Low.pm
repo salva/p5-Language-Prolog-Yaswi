@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi::Low;
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 use strict;
 use warnings;
@@ -57,27 +57,6 @@ sub init {
     start();
 }
 
-our %opaque;
-
-sub register_opaque {
-    my $obj=shift;
-    my $p=OPAQUE_PREFIX().sprintf("%x", ref2int($obj));
-    exists $opaque{$p} or
-	$opaque{$p}=$obj;
-    return $p;
-}
-
-sub unregister_opaque {
-    my $p=shift;
-    delete $opaque{$p}
-}
-
-sub get_opaque {
-    my $p=shift;
-    exists $opaque{$p}
-	or croak "trying to retrieve opaque from non existant key '$p'";
-    $opaque{$p}
-}
 
 1;
 __END__

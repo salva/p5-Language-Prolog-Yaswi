@@ -24,11 +24,6 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	PL_get_float(t, &v);
 	return newSVnv(v);
     }
-    if (PL_is_atom(t)) {
-	char *v;
-	PL_get_atom_chars(t, &v);
-	return newSVpv(v, 0);
-    }
     if (PL_is_list(t)) {
 	AV *array=newAV();
 	SV *ref=newRV_noinc((SV *)array);
@@ -52,21 +47,23 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	sv_bless(ref, gv_stashpv(TYPEINTPKG "::ulist", 1));
 	return ref;
     }
+    if (PL_is_atom(t)) {
+	char *v;
+	PL_get_atom_chars(t, &v);
+	return newSVpv(v, 0);
+    }
     if (PL_is_compound(t)) {
 	SV *ref;
 	int i;
 	int arity;
 	atom_t atom;
+
 	PL_get_name_arity(t, &atom, &arity);
-	if (arity==3 && !strcmp(OPAQUE_FUNCTOR, PL_atom_chars(atom))) {
-	    term_t arg=PL_new_term_ref();
-	    PL_get_arg(1, t, arg);
-	    ref=call_sub_sv__sv (aTHX_
-				 PKG "::get_opaque",
-				 sv_2mortal(swi2perl(aTHX_
-						     arg, cells)));
+	
+	if ( arity==2 &&
+	     strcmp(OPAQUE_FUNCTOR, PL_atom_chars(atom))==0 &&
+	     pl_get_perl_opaque(aTHX_ t, &ref) ) {
 	    SvREFCNT_inc(ref);
-	    return ref;
 	}
 	else {
 	    AV *functor=newAV();
@@ -81,8 +78,8 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 		av_store(functor, i, swi2perl(aTHX_
 					      arg, cells));
 	    }
-	    return ref;
 	}
+	return ref;
     }
     if (PL_is_variable(t)) {
 	term_t var;
@@ -106,7 +103,7 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	    av_push(cells, cell);
 	}
 	ref=newRV_inc(cell);
-	sv_bless(ref, gv_stashpv(TYPEINTPKG "::variable",1));
+	sv_bless(ref, gv_stashpv(TYPEINTPKG "::variable", 1));
 	return ref;
     }
     if (PL_is_string(t)) {

@@ -17,7 +17,7 @@ int hook_set=0;
 
 
 static int my_agc_hook(atom_t a) {
-    if(!strcmp(OPAQUE_PREFIX, PL_atom_chars(a))) {
+    if(!strcmp(OPAQUE_FUNCTOR, PL_atom_chars(a))) {
 	dTHX;
 	dSP;
 	ENTER;

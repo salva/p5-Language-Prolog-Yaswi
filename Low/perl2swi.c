@@ -12,28 +12,18 @@
 #include "hook.h"
 #include "opaque.h"
 #include "perl2swi.h"
-
+#include "context.h"
 
 /* prototypes */
-
-static term_t perl2swi_ifunctor(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_array(pTHX_ 
-			     AV *array, int u,
-			     AV *refs, AV *cells);
-static term_t perl2swi_nil(AV *refs, AV *terms);
-static term_t perl2swi_ilist(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_iulist(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_list(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_functor(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_var(pTHX_ SV *sv, AV *refs, AV *cells);
-static term_t perl2swi_opaque(pTHX_ SV *o, AV *refs, AV *cells);
-static term_t perl2swi_any_ref(pTHX_ SV *ref, AV *refs, AV *cells);
-static term_t perl2swi_object(pTHX_ SV *sv, AV *refs, AV *cells);
-static term_t lookup_ref(pTHX_ SV *sv, AV *refs, AV *cells);
-static term_t perl2swi_rv(pTHX_ SV *sv, AV *refs, AV *cells);
-
-
-SV *converter;
+static int pl_unify_perl_ifunctor(pTHX_ term_t t, SV *o, AV *refs, AV *cells);
+static int pl_unify_perl_ilist(pTHX_ term_t t, SV *o, AV *refs, AV *cells);
+static int pl_unify_perl_iulist(pTHX_ term_t t, SV *o, AV *refs, AV *cells);
+static int pl_unify_perl_list(pTHX_ term_t t, SV *o, AV *refs, AV *cells);
+static int pl_unify_perl_functor(pTHX_ term_t t, SV *o, AV *refs, AV *cells);
+static int pl_unify_perl_var(pTHX_ term_t t, SV *sv, AV *refs, AV *cells);
+static int pl_unify_perl_any_ref(pTHX_ term_t t, SV *ref, AV *refs, AV *cells);
+static int pl_unify_perl_object(pTHX_ term_t t, SV *sv, AV *refs, AV *cells);
+static int pl_unify_perl_rv(pTHX_ term_t t, SV *rv, AV *refs, AV *cells);
 
 
 static SV *my_fetch (pTHX_ AV *av, int i) {
@@ -41,228 +31,210 @@ static SV *my_fetch (pTHX_ AV *av, int i) {
     return (sv_p ? *sv_p : &PL_sv_undef);
 }
 
+static int
+pl_unify_perl_ifunctor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
+    AV *array=(AV *)o;
+    int i;
+    int arity;
+    char *name;
+    STRLEN len;
+    atom_t name_a;
 
-static term_t perl2swi_ifunctor(pTHX_ SV *o, AV *refs, AV *cells) {
-    if(SvTYPE(o)==SVt_PVAV) {
-	AV *array=(AV *)o;
-	int i;
-	int arity=av_len(array);
-	term_t t=PL_new_term_ref();
-	atom_t name=PL_new_atom(SvPV_nolen(my_fetch(aTHX_ array, 0)));
-	PL_put_functor(t, PL_new_functor(name, arity));
-	PL_unregister_atom(name);
-	for(i=1; i<=arity; i++) {
-	    PL_unify_arg(i, t,
-			 perl2swi_sv(aTHX_
-				     my_fetch(aTHX_ array, i),
-				     refs, cells));
-	}
-	return t;
+    if (SvTYPE(o)!=SVt_PVAV) {
+	warn ("implementation mismatch, " TYPEINTPKG "::functor object is not an array ref");
+	return FALSE;
     }
-    else 
-	die ("implementation mismatch, " TYPEINTPKG "::functor object is not an array ref");
-    return -1;
+
+    name=SvPV(my_fetch(aTHX_ array, 0), len);
+    name_a=PL_new_atom_nchars(len, name);
+
+    arity=av_len(array);
+    if (arity>0) {
+	if ( PL_unify_functor(t, PL_new_functor(name_a, arity)) ) {
+	    for(i=1; i<=arity; i++) {
+		term_t arg = PL_new_term_ref();
+		if ( !PL_unify_arg(i, t, arg) ||
+		     !pl_unify_perl_sv(aTHX_ arg, my_fetch(aTHX_ array, i),
+				       refs, cells) )
+		    return FALSE;
+	    }
+	    return TRUE;
+	}
+	return FALSE;
+    }
+    return PL_unify_atom(t, name_a);
 }
 
-static term_t perl2swi_array(pTHX_
-			     AV *array, int u,
-			     AV *refs, AV *cells) {
+int
+pl_unify_perl_av(pTHX_ term_t t, AV *array, int u, AV *refs, AV *cells) {
+    term_t l = PL_copy_term_ref(t);
+    term_t a = PL_new_term_ref();
     int i;
     int len=av_len(array);
-    term_t tail, list;
-
-    /* warn ("perl2swi_array(%_, %i, %_, %_)\n", array, u, refs, cells); */
-
-    if(u) {
-	if (len<0)
-	    die ("implementation mismatch, " TYPEINTPKG "::ulist object is an array with less than one element\n");
-	--len;
-	tail=perl2swi_sv(aTHX_
-			 my_fetch(aTHX_ array, len),
-			 refs, cells);
+    if (u) {
+	len--;
+	if (len<0) {
+	    warn ("implementation mismatch, " TYPEINTPKG "::ulist object is an array with less than one element\n");
+	    return FALSE;
+	}
     }
-    else {
-	tail=perl2swi_nil(refs, cells);
+    for(i=0; i<=len; i++) {
+	if ( !PL_unify_list(l, a, l) ||
+	     !pl_unify_perl_sv(aTHX_ a, my_fetch(aTHX_ array, i),
+			       refs, cells) )
+	    return FALSE;
     }
-    for(i=len;i>=0;tail=list, --i) {
-	list=PL_new_term_ref();
-	PL_cons_list(list,
-		     perl2swi_sv(aTHX_
-				 my_fetch(aTHX_ array, i),
-				 refs, cells),
-		     tail);
+
+    if (u)
+	return pl_unify_perl_sv(aTHX_ l, my_fetch(aTHX_ array, i),
+				refs, cells);
+
+    return PL_unify_nil(l);
+}
+
+static int
+pl_unify_perl_ilist(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
+    if (SvTYPE(o)!=SVt_PVAV) {
+	warn ("implementation mismatch, " TYPEINTPKG "::list object is not an array ref");
+	return FALSE;
     }
-    return tail;
+    return pl_unify_perl_av(aTHX_ t, (AV *)o, 0, refs, cells);
 }
 
-static term_t perl2swi_nil(AV *refs, AV *terms) {
-    term_t t=PL_new_term_ref();
-    PL_put_nil(t);
-    return t;
+static int
+pl_unify_perl_iulist(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
+    if (SvTYPE(o)!=SVt_PVAV) {
+	warn ("implementation mismatch, " TYPEINTPKG "::ulist object is not an array ref");
+	return FALSE;
+    }
+    return pl_unify_perl_av(aTHX_ t, (AV *)o, 1, refs, cells);
 }
 
-static term_t perl2swi_ilist(pTHX_ SV *o, AV *refs, AV *cells) {
-    if(SvTYPE(o)==SVt_PVAV)
-	return perl2swi_array(aTHX_ (AV *)o, 0, refs, cells);
-    else
-	die ("implementation mismatch, " TYPEINTPKG "::list object is not an array ref");
-    return -1;
-}
-
-static term_t perl2swi_iulist(pTHX_ SV *o, AV *refs, AV *cells) {
-    if(SvTYPE(o)==SVt_PVAV)
-	return perl2swi_array(aTHX_ (AV *)o, 1, refs, cells);
-    else
-	die ("implementation mismatch, " TYPEINTPKG "::list object is not an array ref");
-    return -1;
-}
-
-static term_t perl2swi_list(pTHX_ SV *o, AV *refs, AV *cells) {
+static int
+pl_unify_perl_list(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
     dSP;
     int i;
     int len;
-    term_t tail, list;
+    term_t l = PL_copy_term_ref(t);
+    term_t a = PL_new_term_ref();
 
     len=call_method__int(aTHX_ o, "length");
-    tail=perl2swi_sv( aTHX_
-		      call_method__sv(aTHX_ o, "tail"),
-		      refs, cells );
-
-    for (i=len; --i>=0; tail=list) {
+    for (i=0; i<=len; i++) {
+	SV *larg;
 	ENTER;
 	SAVETMPS;
-	list=PL_new_term_ref();
-	PL_cons_list(list,
-		     perl2swi_sv( aTHX_
-				  call_method_int__sv(aTHX_ o, "larg", i),
-				  refs, cells ),
-		     tail);
+	larg=call_method_int__sv(aTHX_ o, "larg", i);
 	FREETMPS;
 	LEAVE;
+	if ( !PL_unify_list(l, a, l) ||
+	     !pl_unify_perl_sv(aTHX_ a, larg,
+			       refs, cells) )
+	    return FALSE;
     }
-    return tail;
+    return pl_unify_perl_sv(aTHX_ l, call_method__sv(aTHX_ o, "tail"),
+			    refs, cells );
 }
 
-static term_t perl2swi_functor(pTHX_ SV *o, AV *refs, AV *cells) {
+static int
+pl_unify_perl_functor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
     dSP;
-    int i;
-    int arity=call_method__int(aTHX_ o, "arity");
-    term_t t=PL_new_term_ref();
-    term_t arg0=PL_new_term_refs(arity);
-    atom_t name;
-    for(i=0; i<arity; i++) {
-	ENTER;
-	SAVETMPS;
-	PL_unify(arg0+i, 
-		 perl2swi_sv(aTHX_
-			     call_method_int__sv(aTHX_ o, "farg", i),
-			     refs, cells));
-	FREETMPS;
-	LEAVE;
+    int arity;
+    char *name;
+    STRLEN len;
+    atom_t name_a;
+
+    name=SvPV(call_method__sv(aTHX_ o, "functor"), len);
+    name_a=PL_new_atom_nchars(len, name);
+
+    arity=call_method__int(aTHX_ o, "arity");
+    if (arity>0) {
+	if ( PL_unify_functor(t, PL_new_functor(name_a, arity)) ) {
+	    int i;
+	    for(i=1; i<=arity; i++) {
+		term_t arg;
+		SV *farg;
+		ENTER;
+		SAVETMPS;
+		farg=call_method_int__sv(aTHX_ o, "farg", i-1);
+		FREETMPS;
+		LEAVE;
+		arg=PL_new_term_ref();
+		if ( !PL_unify_arg(i, t, arg) ||
+		     !pl_unify_perl_sv(aTHX_ arg, farg,
+				       refs, cells) )
+		    return FALSE;
+	    }
+	    return TRUE;
+	}
+	return FALSE;
     }
-    name=PL_new_atom(SvPV_nolen(call_method__sv(aTHX_ o,"functor")));
-    PL_cons_functor_v(t,
-		      PL_new_functor(name, arity),
-		      arg0);
-    PL_unregister_atom(name);
-    return t;
+    return PL_unify_atom(t, name_a);
 }
 
-static term_t perl2swi_var(pTHX_ SV *sv, AV *refs, AV *cells) {
-    term_t t=PL_new_term_ref();
-    /* PL_put_variable(t); */
-    return t;
+static int
+pl_unify_perl_var(pTHX_ term_t t, SV *sv, AV *refs, AV *cells) {
+    return TRUE;
 }
 
-static term_t perl2swi_opaque(pTHX_ SV *o, AV *refs, AV *cells) {
-    dSP;
-    SV *key;
-    term_t t;
-    ENTER;
-    SAVETMPS;
-    key=call_sub_sv__sv(aTHX_
-			PKG "::register_opaque",
-			call_method__sv(aTHX_
-					o,
-					"opaque_reference"));
-    if (!hook_set) set_my_agc_hook();
-    t=PL_new_term_ref();
-    PL_unify_term(t,
-		  PL_FUNCTOR_CHARS, OPAQUE_FUNCTOR, 3,
-		  PL_CHARS, SvPV_nolen(key),
-		  PL_TERM, perl2swi_sv(aTHX_
-				       call_method__sv(aTHX_
-						       o,
-						       "opaque_class"),
-				       refs, cells),
-		  PL_TERM, perl2swi_sv(aTHX_
-				       call_method__sv(aTHX_
-						       o,
-						       "opaque_comment"),
-				       refs, cells));
-    FREETMPS;
-    LEAVE;
-    return t;
+static int
+pl_unify_perl_any_ref(pTHX_ term_t t, SV *ref, AV *refs, AV *cells) {
+    dMY_CXT;
+    return pl_unify_perl_sv(aTHX_ t,
+			    call_method_sv__sv(aTHX_ c_converter,
+					       "perl_ref2prolog", ref),
+			    refs, cells);
 }
 
-static term_t perl2swi_any_ref(pTHX_ SV *ref, AV *refs, AV *cells) {
-    /* warn ("Converting Perl ref -> Prolog term\n"); */
-    return perl2swi_sv( aTHX_
-			call_method_sv__sv(aTHX_
-					   converter, "perl_ref2prolog", ref),
-		        refs, cells);
-}
+static int
+pl_unify_perl_object(pTHX_ term_t t, SV *sv, AV *refs, AV *cells) {
 
-static term_t perl2swi_object(pTHX_ SV *sv, AV *refs, AV *cells) {
-    /* warn ("perl2swi_object(%_, %_, %_)\n", sv, refs, cells); */
+    if (sv_isa(sv,TYPEINTPKG "::list"))
+	return pl_unify_perl_ilist(aTHX_ t, SvRV(sv), refs, cells);
+    
+    if (sv_isa(sv, TYPEINTPKG "::functor"))
+	return pl_unify_perl_ifunctor(aTHX_ t,  SvRV(sv), refs, cells);
+    
+    if (sv_isa(sv, TYPEINTPKG "::nil"))
+	return PL_unify_nil(t);
+    
+    if (sv_isa(sv, TYPEINTPKG "::opaque"))
+	return pl_unify_perl_iopaque(aTHX_ t, SvRV(sv), refs, cells);
+    
+    if (sv_isa(sv, TYPEINTPKG "::ulist"))
+	return pl_unify_perl_iulist(aTHX_ t, SvRV(sv), refs, cells);
+    
     if (sv_derived_from(sv, TYPEPKG "::Term")) {
-	if (sv_isa(sv,TYPEINTPKG "::list")) {
-	    return perl2swi_ilist(aTHX_ SvRV(sv), refs, cells);
-	}
-	else if(sv_isa(sv, TYPEINTPKG "::ulist")) {
-	    return perl2swi_iulist(aTHX_ SvRV(sv), refs, cells);
-	}
-	else if (sv_isa(sv, TYPEINTPKG "::functor")) {
-	    return perl2swi_ifunctor(aTHX_ SvRV(sv), refs, cells);
-	}
-	else if (sv_isa(sv, TYPEINTPKG "::nil")) {
-	    return perl2swi_nil(refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::UList")) {
-	    return perl2swi_list(aTHX_ sv, refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::List")) {
-	    return perl2swi_list(aTHX_ sv, refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::Functor")) {
-	    return perl2swi_functor(aTHX_ sv, refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::Variable")) {
-	    return perl2swi_var(aTHX_ sv, refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::Opaque")) {
-	    return perl2swi_opaque(aTHX_ sv, refs, cells);
-	}
-	else if (sv_derived_from(sv, TYPEPKG "::Nil")) {
-	    return perl2swi_nil(refs, cells);
-	}
-	else {
-	    die ("unable to convert "TYPEPKG"::Term object '%s' to Prolog term",
-		  SvPV_nolen(sv));
-	    return -1;
-	}
+	
+	if (sv_derived_from(sv,TYPEPKG "::Variable"))
+	    return pl_unify_perl_var(aTHX_ t, SvRV(sv), refs, cells);
+	
+	if (sv_derived_from(sv,TYPEPKG "::List"))
+	    return pl_unify_perl_list(aTHX_ t, SvRV(sv), refs, cells);
+	
+	if (sv_derived_from(sv, TYPEPKG "::Functor"))
+	    return pl_unify_perl_functor(aTHX_ t,  SvRV(sv), refs, cells);
+	
+	if (sv_derived_from(sv, TYPEPKG "::Nil"))
+	    return PL_unify_nil(t);
+	
+	if (sv_derived_from(sv, TYPEPKG "::Opaque"))
+	    return pl_unify_perl_opaque(aTHX_ t, sv, refs, cells);
+	
+	die ("unable to convert " TYPEPKG "::Term object '%s' to Prolog term",
+	     SvPV_nolen(sv));
+	return FALSE;
     }
-    else
-	return perl2swi_any_ref(aTHX_ sv, refs, cells);
+    return pl_unify_perl_any_ref(aTHX_ t, sv, refs, cells);
 }
 
-static term_t lookup_ref(pTHX_ SV *sv, AV *refs, AV *cells) {
+int
+lookup_ref(pTHX_ term_t *t, SV *sv, AV *refs, AV *cells) {
     int i;
     int len=av_len(refs);
     /* warn ("lookup_ref(%_, %_, %_)\n", sv, refs, cells); */
     if(sv_isobject(sv) && sv_derived_from(sv, TYPEPKG "::Variable")) {
 	/* variables are the same if they have the same name, even if
-	 * they have different references */
+	 * they are at different addresses */
 	dSP;
 	SV *name;
 	ENTER;
@@ -283,8 +255,10 @@ static term_t lookup_ref(pTHX_ SV *sv, AV *refs, AV *cells) {
 	SV *new_ref=SvRV(sv);
 	for (i=0; i<=len; i++) {
 	    SV **ref_p=av_fetch(refs, i, 0);
-	    if(!ref_p)
-		die ("internal error, unable to fetch reference pointer from references cache");
+	    if(!ref_p) {
+		warn ("internal error, unable to fetch reference pointer from references cache");
+		return FALSE;
+	    }
 	    if (new_ref==SvRV(*ref_p))
 		break;
 	}
@@ -292,76 +266,53 @@ static term_t lookup_ref(pTHX_ SV *sv, AV *refs, AV *cells) {
     if (i<=len) {
 	SV **cell_p=av_fetch(cells, i, 0);
 	if(!cell_p || !SvOK(*cell_p)) {
-	    warn ("cycled reference passed to Prolog as nil\n");
-	    return perl2swi_nil( refs, cells);
+	    warn ("internal error, unable to fetch cell pointer from references cache");
+	    return FALSE;
 	}
-	return SvIV(*cell_p);
+	*t=SvIV(*cell_p);
+	return TRUE;
     }
-    /* warn ("%_ is not in cache\n", sv); */
-    return -1;
+    return FALSE;
 }
 
-static term_t perl2swi_rv(pTHX_ SV *sv, AV *refs, AV *cells) {
-    term_t t;
-    /* warn ("perl2swi_rv(%_, %_, %_)\n", sv, refs, cells); */
-    if ((t=lookup_ref(aTHX_ sv, refs, cells))==-1) {
-	SV *cell;
-	int cell_index;
-	/* warn ("creating new term for ref\n"); */
-	SvREFCNT_inc(sv);
-	av_push(refs, sv);
-	cell_index=av_len(refs);
-	if(sv_isobject(sv)) {
-	    /* warn ("%_ is object\n", sv); */
-	    t=perl2swi_object(aTHX_ sv, refs, cells);
-	}
-	else {
-	    SV *val=SvRV(sv);
-	    if(SvTYPE(val)==SVt_PVAV) {
-		/* warn ("converting array\n"); */
-		t=perl2swi_array(aTHX_ (AV *)val, 0, refs, cells);
-	    }
-	    else {
-		/* warn ("converting any ref\n"); */
-		t=perl2swi_any_ref(aTHX_ sv, refs, cells);
-	    }
-	}
-	/* store cell in cache */
-	cell=newSViv(t);
-	/* SvREADONLY_on(cell); */
-	if(!av_store(cells, cell_index, cell)) {
-	    die("unable to store cell in cells cache\n");
-	}
+static int
+pl_unify_perl_rv(pTHX_ term_t t, SV *rv, AV *refs, AV *cells) {
+    term_t old;
+    if (lookup_ref(aTHX_ &old, rv, refs, cells)) {
+	return PL_unify(t, old);
     }
-    return t;
-}
 
-term_t perl2swi_sv(pTHX_ SV *sv, AV *refs, AV *cells) {
-    /* warn ("perl2swi_sv(%_, %_, %_)\n", sv, refs, cells); */
-    if (!SvOK(sv)) {
-	return perl2swi_nil(refs, cells);
-    }
-    else if (SvROK(sv)) {
-	/* warn ("converting ref %_ to term", sv); */
-	return perl2swi_rv(aTHX_ sv, refs, cells);
+    SvREFCNT_inc(rv);
+    av_push(refs, rv);
+    av_push(cells, newSViv(PL_copy_term_ref(t)));
+    if(sv_isobject(rv)) {
+	return pl_unify_perl_object(aTHX_ t, rv, refs, cells);
     }
     else {
-	term_t t=PL_new_term_ref();
-	/* warn ("converting scalar %_ to term", sv); */
-	if (SvIOK(sv)) {
-	    PL_put_integer(t, SvIV(sv));
-	}
-	else if (SvNOK(sv)) {
-	    PL_put_float(t, SvNV(sv));
-	}
-	else if (SvPOK(sv)) {
-	    PL_put_atom_chars(t, SvPV_nolen(sv));
-	}
-	else {
-	    die ("unable to convert unknow type '%s' to Prolog term",
-		 SvPV_nolen(sv));
-	}
-	return t;
+	SV *val=SvRV(rv);
+	if(SvTYPE(val)==SVt_PVAV)
+	    return pl_unify_perl_av(aTHX_ t, (AV *)val, 0, refs, cells);
+	return pl_unify_perl_any_ref(aTHX_ t, rv, refs, cells);
+    }
+}
+
+int
+pl_unify_perl_sv(pTHX_ term_t t, SV *sv, AV *refs, AV *cells) {
+    if (!SvOK(sv))
+	return PL_unify_nil(t);
+    if (SvROK(sv))
+	return pl_unify_perl_rv(aTHX_ t, sv, refs, cells);
+    SvGETMAGIC(sv);
+    if (SvIOK(sv))
+	return PL_unify_integer(t, SvIV(sv));
+    if (SvNOK(sv))
+	return PL_unify_float(t, SvNV(sv));
+
+    {
+	STRLEN len;
+	char *name;
+	name = SvPV(sv, len);
+	return PL_unify_atom_nchars(t, len, name);
     }
 }
 
@@ -373,6 +324,6 @@ void perl2swi_module(pTHX_ SV *sv, module_t *m) {
 	PL_unregister_atom(name);	
     }
     else {
-	*m=NULL;
+	*m=0;
     }
 }

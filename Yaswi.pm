@@ -12,11 +12,17 @@ our %EXPORT_TAGS = ( 'query' => [ qw( swi_set_query
 				      swi_result
 				      swi_next
 				      swi_var
+				      swi_vars
 				      swi_query
 				      swi_cut
 				      swi_find_all
 				      swi_find_one
-				      swi_call )],
+				      swi_call
+				      swi_parse
+				      swi_eval )],
+		     'load' => [ qw( swi_inline
+				     swi_consult
+				     swi_use_modules )],
 		     'assert' => [ qw( swi_assert
 				       swi_asserta
 				       swi_assertz
@@ -24,6 +30,7 @@ our %EXPORT_TAGS = ( 'query' => [ qw( swi_set_query
 		     'interactive' => [ qw( swi_toplevel )],
 		     'context' => [ qw( $swi_module
 					$swi_ctx_module
+					$swi_temp_dir
 					$swi_converter) ],
 		     'run' => [ qw( swi_init
 				    swi_cleanup )] );
@@ -32,17 +39,24 @@ our @EXPORT_OK = ( @{$EXPORT_TAGS{query}},
 		   @{$EXPORT_TAGS{assert}},
 		   @{$EXPORT_TAGS{interactive}},
 		   @{$EXPORT_TAGS{context}},
-		   @{$EXPORT_TAGS{run}} );
+		   @{$EXPORT_TAGS{run}},
+		   @{$EXPORT_TAGS{load}});
 
 our @EXPORT = qw();
 
 use Carp;
-use Language::Prolog::Types qw(:util F L C isV isL);
-
+use File::Temp;
+use Language::Prolog::Types qw(:util F L C V isF isL isV);
 use Language::Prolog::Yaswi::Low;
 
-our $swi_module=undef;
-our $swi_ctx_module=undef;
+
+our $swi_module = undef;
+our $swi_ctx_module = undef;
+
+our $swi_temp_dir = undef;
+
+our $swi_debug = undef;
+
 
 sub swi_init;
 *swi_init=\&init;
@@ -64,7 +78,6 @@ sub swi_cut();
 
 
 sub swi_set_query (@) {
-    # warn "swi_set_query(@_)\n";
     return swi_set_query_module(C(',', @_),
 				$swi_module,
 				$swi_ctx_module);
@@ -90,11 +103,12 @@ sub swi_result() {
     getallvars();
 }
 
-sub map_vars {
+sub swi_vars {
     testquery();
     return map {
 	isV($_)     ? getvar($_) :
-        isL($_)     ? L(_vars(prolog_list2perl_list($_))) :
+        isL($_)     ? L(swi_vars(prolog_list2perl_list($_))) :
+	isF($_)     ? F($_->functor => swi_vars($_->fargs)) :
         ($_ eq '*') ? getquery() :
 	(ref($_) eq '') ? $_ :
 	croak "invalid mapping '$_'";
@@ -106,7 +120,7 @@ sub swi_find_all ($;@) {
     swi_set_query(shift);
     while (swi_next) {
 	# warn "new solution found\n";
-	push @r, map_vars(@_);
+	push @r, swi_vars(@_);
     }
     return @r
 }
@@ -114,7 +128,7 @@ sub swi_find_all ($;@) {
 sub swi_find_one ($;@) {
     swi_set_query(shift);
     if (swi_next) {
-	my @r=map_vars(@_);
+	my @r=swi_vars(@_);
 	swi_cut;
 	return wantarray ? @r : $r[0];
     }
@@ -148,6 +162,56 @@ sub swi_facts {
     return swi_call C(',', (map { F(assertz => $_) } @_));
 }
 
+sub swi_consult {
+    return swi_call([@_]);
+}
+
+sub swi_use_modules {
+    swi_call F(use_module => $_) for @_
+}
+
+sub swi_parse {
+    my @r;
+    for my $atom (@_) {
+	my ($t, $b) = swi_find_one(F(atom_to_term => $atom, V('T'), V('B')),
+				   V('T'), V('B'));
+	if (isL $b) {
+	    for my $pair (@{$b}) {
+		my $var = $pair->farg(1);
+		$var->rename($pair->farg(0))
+	    }
+	}
+	push @r, $t
+    }
+    return wantarray ? @r : $r[0]
+}
+
+sub swi_eval {
+    swi_call(C(',' => swi_parse(@_)))
+}
+
+sub swi_inline {
+    my $tmp=File::Temp->new(TEMPLATE => 'swi_inline_XXXXXXXX', SUFFIX => '.swi',
+			    ((defined $swi_temp_dir) ?
+			     (DIR => $swi_temp_dir) : ()));
+    defined ($tmp) or croak "unable to create temporal prolog source file";
+    my $fn=$tmp->filename;
+
+    $tmp->print(@_, "\n");
+    $tmp->close;
+
+    eval { swi_call F(load_files => $fn, []) };
+    unlink $fn;
+    die $@ if $@;
+}
+
+
+package Language::Prolog::Yaswi::HASH;
+our @ISA=qw(Language::Prolog::Types::Opaque::Auto);
+
+sub new { return bless {}; }
+
+
 1;
 __END__
 
@@ -177,7 +241,7 @@ Language::Prolog::Yaswi - Yet another interface to SWI-Prolog
   }
 
   print join("\n",
-             xsb_findall(andn(equal(X, 2),
+             swi_findall(andn(equal(X, 2),
                               orn(equal(Y, 1),
                                   equal(Y, 3.1416))
                               is(Z, plus(X,Y,Y))),
@@ -215,24 +279,24 @@ Grouped by export tag:
 
 =over 4
 
-=item C<:query>
+=item :query
 
 =over 4
 
-=item C<swi_set_query($query1, $query2, $query3, ...)>
+=item swi_set_query($query1, $query2, $query3, ...)
 
 Compose a query with all its parameters and sets it. Return the set of
 free variables found in the query.
 
-=item C<swi_set_query_module($query, $module, $ctx_module)>
+=item swi_set_query_module($query, $module, $ctx_module)
 
 Allows to set a query in a different module than the default.
 
-=item C<swi_result()>
+=item swi_result
 
 Return the values binded to the variables in the query.
 
-=item C<swi_next()>
+=item swi_next
 
 Iterates over the query solutions.
 
@@ -242,22 +306,32 @@ and returns false.
 It should be called after C<swi_set_query(...)> to obtain the first
 solution.
 
-=item C<swi_var($var)>
+=item swi_var($var)
 
 Returns the value binded to C<$var> in the current query/solution combination.
 
-=item C<swi_query>
+=item swi_vars(@vars)
+
+Returns the values binded to C<@vars> in the current query/solution combination.
+
+Actually, it accepts more powerfull contructions, i.e.
+
+  $a = swi_vars([X, Y, [Z]])
+
+
+
+=item swi_query
 
 Returns the current query with the variables binded to its values in
 the current solution (or unbinded if swi_next has not been called
 yet).
 
-=item C<swi_cut>
+=item swi_cut
 
 Closes the current query even if not all of its solutions have been
-retrieved. Similar to prolog C<!>.
+retrieved. Similar to prolog cut (C<!>).
 
-=item C<swi_find_all($query, @pattern)>
+=item swi_find_all($query, @pattern)
 
 iterates over $query and returns and array with @pattern binded to
 every solution. i.e:
@@ -278,42 +352,59 @@ More elaborate constructions can be used:
 There is also an example of its usage in the SYNOPSIS.
 
 
-=item C<swi_find_one($query, @pattern>
+=item swi_find_one($query, @pattern)
 
 as C<swi_find_all> but only for the first solution.
 
-=item C<swi_call>
+=item swi_call($query)
 
 runs the query once and return true if a solution was found or false
 otherwise.
 
 =back
 
-=item C<:interactive>
+=item :interactive
 
 =over 4
 
-=item C<swi_toplevel>
+=item swi_toplevel
 
 mostly for debugging pourposes, runs SWI-Prolog shell.
 
 =back
 
-=item C<:assert>
+=item :load
 
 =over 4
 
-=item C<swi_assert($head =E<gt> @body)>
+=item swi_inline @code
 
-=item C<swi_assertz($head =E<gt> @body)>
+dumps C<@code> to a temporary file and C<consult>s it from prolog.
+
+Use C<$swi_temp_dir> to change the directory where the file is
+created.
+
+=item swi_consult @files
+
+=item swi_use_modules @modules
+
+=back
+
+=item :assert
+
+=over 4
+
+=item swi_assert($head =E<gt> @body)
+
+=item swi_assertz($head =E<gt> @body)
 
 add new definitions at the botton of the database
 
-=item C<swi_asserta($head =E<gt> @body)>
+=item swi_asserta($head =E<gt> @body)
 
 adds new definitions at the top of the database
 
-=item C<swi_facts(@facts)>
+=item swi_facts(@facts)
 
 commodity subroutine to add several facts (facts, doesn't have body)
 to the database in one call.
@@ -329,44 +420,48 @@ i.e.:
 
 =back
 
-=item C<:context>
+=item :context
 
 =over 4
 
 
 
-=item C<$swi_module>
+=item $swi_module
 
-=item C<$swi_ctx_module>
+=item $swi_ctx_module
 
 allow to change the module and the context module for the upcoming
 queries.
 
-use ALWAYS the C<local> operator when changing their values!!!
+use the C<local> operator when changing their values ALWAYS!!!
 
 i.e.:
 
    local $swi_module='mymodule'
    swi_set_query($query_from_mymodule);
 
-=item C<$swi_converter>
+=item $swi_converter
 
 allows to change the way data is converter from Perl to Prolog.
 
-You should not use it for any other thing that to configure perl
-classes as opaque, i.e.:
+You should really not use it for any thing different than configuring
+perl classes as opaque, i.e.:
 
   $swi_converter->pass_as_opaque(qw(LWP::UserAgent
                                     HTTP::Request
                                     HTTP::Result))
 
+=item $swi_temp_dir
+
+see docs for L<swi_inline()>
+
 =back
 
-=item C<:run>
+=item :run
 
 =over 4
 
-=item C<swi_init(@args)>
+=item swi_init(@args)
 
 lets init the prolog engine with a different set of arguments
 (identical to the command line arguments for the C<pl> SWI-Prolog
@@ -379,7 +474,7 @@ Language::Prolog::Yaswi will automatically create a new engine with
 the default arguments (or with the last passed via swi_init), when
 needed.
 
-=item C<swi_cleanup()>
+=item swi_cleanup
 
 releases the prolog engine.
 
@@ -395,20 +490,21 @@ arguments.
 Yaswi adds to SWI-Prolog three new predicates to call perl back.
 
 All the calls are made in array contest and the Result value is always
-a list. There is no way to make a call in scalar context yet.
+a list. There is no way to make a call in scalar context other than
+explicitly calling scalar.
 
 =over 4
 
-=item C<perl5_eval(+Code, -Result)>
+=item perl5_eval(+Code, -Result)
 
 makes perl evaluate the string C<Code> (really a Prolog atom) and
 returns the results.
 
-=item C<perl5_call(+Sub, +Args, -Result)>
+=item perl5_call(+Sub, +Args, -Result)
 
 calls a perl sub.
 
-=item C<perl5_method(+Object, +Method, +Args, -Result)>
+=item perl5_method(+Object, +Method, +Args, -Result)
 
 calls the method C<Method> from the perl object C<Object>.
 
@@ -416,10 +512,11 @@ To get objects passed to prolog as opaques instead of marshaled to
 prolog types, its class (or one of its parent classes) has to be
 previously register as opaque with the $swi_converter object. i.e.:
 
-  perl5_eval('$swi_converter->pass_as_opaque("HTTP::Request")',_),
+  perl5_eval('$Language::Prolog::Yaswi::swi_converter \
+               -> pass_as_opaque("HTTP::Request")',_),
   perl5_eval('use HTTP::Request',_),
   perl5_method('HTTP::Request', new, [], [Request]),
-  perl5_method(Request, as_string, [], [Text]);
+  perl5_method(Request, as_string, [], [Text]).
 
 Registering class C<UNIVERSAL> makes all objects to be passed to
 prolog as opaques.
@@ -465,7 +562,7 @@ Salvador Fandiño, E<lt>sfandino@yahoo.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003 by Salvador Fandiño
+Copyright 2003-2005 by Salvador Fandiño
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

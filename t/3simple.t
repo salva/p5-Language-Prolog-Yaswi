@@ -1,14 +1,14 @@
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 use strict;
 use warnings;
 
 use Language::Prolog::Types ':short';
 use Language::Prolog::Types::overload;
-use Language::Prolog::Sugar functors => [qw( man god mortal)],
+use Language::Prolog::Sugar functors => [qw( man god mortal foobolize)],
                             vars     => [qw( X )];
 
-use Language::Prolog::Yaswi qw(:query :assert);
+use Language::Prolog::Yaswi qw(:query :assert :load);
 
 swi_assert(mortal(X) => man(X));
 
@@ -30,4 +30,15 @@ ok( !swi_next(), 'swi_next ends');
 is_deeply( [swi_find_all(man(X),X)], ['socrates', 'bush'], 'swi_find_all');
 
 is( swi_find_one(god(X), X), 'zeus', 'swi_find_one');
+
+swi_inline <<CODE;
+
+:- module(foo, [foobolize/1]).
+
+foobolize(foo).
+foobolize(bar).
+
+CODE
+
+is_deeply( [swi_find_all(foobolize(X), X )], [qw(foo bar)], "swi_inline");
 

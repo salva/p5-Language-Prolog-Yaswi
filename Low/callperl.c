@@ -9,7 +9,6 @@
 
 #include "context.h"
 
-#include "frames.h"
 #include "engines.h"
 #include "perl2swi.h"
 #include "swi2perl.h"
@@ -45,65 +44,63 @@ void boot_callperl(void) {
     }
 }
 
-static savestate(pTHX_ pMY_CXT) {
+static void
+savestate(pTHX_ pMY_CXT) {
     savestate_Low(aTHX_ aMY_CXT);
     savestate_query(aTHX_ aMY_CXT);
     savestate_vars(aTHX_ aMY_CXT);
-    /*
-      save_hptr(&PL_curstash);
-      save_item(PL_curstname);
-      PL_curstash = gv_stashpvn(CALLPERLPKG, CALLPERLPKG_len, TRUE);
-      sv_setpvn(PL_curstname, CALLPERLPKG, CALLPERLPKG_len);
-    */
 }
 
-static int test_oq(pTHX_ pMY_CXT) {
+static int
+test_open_query(pTHX_ pMY_CXT) {
     if (is_query(aTHX_ aMY_CXT)) {
-	cut_query(aTHX_ aMY_CXT);
-	return 1;
+	close_query(aTHX_ aMY_CXT);
+	return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
-static void type_error_atom_exception(term_t nonatom, term_t *e) {
-    PL_unify_term(*e=PL_new_term_ref(),
-		  PL_FUNCTOR_CHARS, "type_error", 2,
-		  PL_CHARS, "atom",
-		  PL_TERM, nonatom);
-}
-
-static void oq_exception(term_t *e) {
-    PL_unify_term(*e=PL_new_term_ref(),
-		  PL_FUNCTOR_CHARS, "perl_exception", 1,
-		  PL_CHARS, "open_query");
-}
-
-static int pop_results(pTHX_ int nret, term_t *r, term_t *e) {
-    AV *vars=(AV*)sv_2mortal((SV *)newAV());
+static int
+check_error_and_pop_results(pTHX_ pMY_CXT_ term_t t, int n) {
+    dSP;
+    AV *refs=(AV*)sv_2mortal((SV *)newAV());
     AV *cells=(AV*)sv_2mortal((SV *)newAV());
-    if (!nret && SvTRUE(ERRSV)) {
-	PL_unify_term(*e=PL_new_term_ref(),
+
+    if (n && SvTRUE(ERRSV)) {
+	term_t e, pe;
+	test_open_query(aTHX_ aMY_CXT);
+	e=PL_new_term_ref();
+	pe=PL_new_term_ref();
+
+	pl_unify_perl_sv(aTHX_ pe, ERRSV, refs, cells);
+	PL_unify_term(e,
 		      PL_FUNCTOR_CHARS, "perl_exception", 1,
-		      PL_TERM, perl2swi_sv(aTHX_
-					   ERRSV,
-					   vars, cells));
-	return 0;
+		      PL_TERM, pe);
+	PL_raise_exception(e);
+	return FALSE;
+    }
+    else if (test_open_query(aTHX_ aMY_CXT)) {
+	term_t e=PL_new_term_ref();
+	PL_unify_term(e,
+		      PL_FUNCTOR_CHARS, "perl_exception", 1,
+		      PL_CHARS, "open_query");
+	PL_raise_exception(e);
+	return FALSE;
     }
     else {
-	dSP;
-	term_t ret=PL_new_term_ref();
-	PL_put_nil(ret);
-	while(--nret>=0) {
-	    PL_cons_list(ret,
-			 perl2swi_sv(aTHX_ POPs, vars, cells),
-			 ret);
+	AV *ret=newAV();
+	av_extend(ret, n-1);
+	while(--n>=0) {
+	    SV *sv=POPs;
+	    SvREFCNT_inc(sv);
+	    av_store(ret, n, sv);
 	}
-	*r=ret;
-	return 1;
+	return pl_unify_perl_av(aTHX_ t, ret, 0, refs, cells);
     }
 }
 
-static int push_args(pTHX_ term_t obj, int obj_ok, term_t args, term_t *e) {
+static int
+push_args(pTHX_ term_t obj, int obj_ok, term_t args) {
     dSP;
     term_t head, list;
     AV *cells=(AV *)sv_2mortal((SV *) newAV());
@@ -117,56 +114,57 @@ static int push_args(pTHX_ term_t obj, int obj_ok, term_t args, term_t *e) {
 	    XPUSHs(sv_2mortal(swi2perl(aTHX_ head, cells)));
 	}
 	else {
-	    PL_unify_term(*e=PL_new_term_ref(),
+	    term_t e=PL_new_term_ref();
+	    PL_unify_term(e,
 			  PL_FUNCTOR_CHARS, "type_error", 2,
 			  PL_CHARS, "list",
 			  PL_TERM, args);
-	    return 0;
+	    PL_raise_exception(e);
+	    return FALSE;
 	}
     }
     PUTBACK;
-    return 1;
+    return TRUE;
+}
+
+static void
+raise_atom_expected(term_t nonatom) {
+    term_t e=PL_new_term_ref();
+    PL_unify_term(e,
+		  PL_FUNCTOR_CHARS, "type_error", 2,
+		  PL_CHARS, "atom",
+		  PL_TERM, nonatom);
+    PL_raise_exception(e);
 }
 
 static foreign_t swi2perl_sub(term_t name,
 			      term_t args,
 			      term_t result ) {
     char *cname;
-    term_t e;
     if (PL_get_atom_chars(name, &cname)) {
 	MY_dTHX;
 	dMY_CXT;
 	dSP;
-	term_t ret;
-	int nret, oq, ok;
+	int n;
+	int ret=FALSE;
 
 	ENTER;
 	SAVETMPS;
-	savestate(aTHX_ aMY_CXT);
-
 	PUSHMARK(SP);
-	if (ok=push_args(aTHX_ 0, 0, args, &e)) {
-	    push_frame(aTHX_ aMY_CXT);
-	    nret=call_pv(cname, G_ARRAY | G_EVAL);
-	    SPAGAIN;
-	    oq=test_oq(aTHX_ aMY_CXT);
-	    pop_frame(aTHX_ aMY_CXT);
-	    if (ok=pop_results(aTHX_ nret, &ret, &e)) {
-		if (oq) {
-		    ok=0;
-		    oq_exception(&e);
-		}
-	    }
+	savestate(aTHX_ aMY_CXT);
+	if (push_args(aTHX_ 0, 0, args)) {
+	    n=call_pv(cname, G_ARRAY | G_EVAL);
+	    ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	}
 
+	SPAGAIN;
 	FREETMPS;
 	LEAVE;
-	
-	if (ok) return PL_unify(result, ret);
-    }
-    else type_error_atom_exception(name, &e);
-    return PL_raise_exception(e);
 
+	return ret;
+    }
+    else raise_atom_expected(name);
+    return FALSE;
 }
 
 static foreign_t swi2perl_eval(term_t code,
@@ -177,38 +175,24 @@ static foreign_t swi2perl_eval(term_t code,
 	MY_dTHX;
 	dMY_CXT;
 	dSP;
-	term_t ret;
-	int nret, oq, ok;
+	int n;
+	int ret=FALSE;
 	SV *svcode;
-	fprintf(stderr, "pre eval\n");
-	fflush(stderr);
+
 	ENTER;
 	SAVETMPS;
-	savestate(aTHX_ aMY_CXT);
 	PUSHMARK(SP);
-
-	push_frame(aTHX_ aMY_CXT);
+	savestate(aTHX_ aMY_CXT);
 	svcode=sv_2mortal(newSVpv(ccode, 0));
-	fprintf(stderr, "entering eval\n");
-	nret=eval_sv(svcode, G_ARRAY | G_EVAL);
+	n=eval_sv(svcode, G_ARRAY | G_EVAL);
+	ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	SPAGAIN;
-	fprintf(stderr, "returned from eval\n");
-	oq=test_oq(aTHX_ aMY_CXT);
-	pop_frame(aTHX_ aMY_CXT);
-	if (ok=pop_results(aTHX_ nret, &ret, &e)) {
-	    if (oq) {
-		ok=0;
-		oq_exception(&e);
-	    }
-	}
-
 	FREETMPS;
 	LEAVE;
-	
-	if (ok) return PL_unify(result, ret);
+	return ret;
     }
-    else type_error_atom_exception(code, &e);
-    return PL_raise_exception(e);
+    else raise_atom_expected(code);
+    return FALSE;
 }
 
 static foreign_t swi2perl_method(term_t object,
@@ -221,35 +205,22 @@ static foreign_t swi2perl_method(term_t object,
 	MY_dTHX;
 	dMY_CXT;
 	dSP;
-	term_t ret;
-	int nret, oq, ok;
-
+	int n;
+	int ret=FALSE;
 	ENTER;
 	SAVETMPS;
-	savestate(aTHX_ aMY_CXT);
-
 	PUSHMARK(SP);
-	if (ok=push_args(aTHX_ object, 1, args, &e)) {
-	    push_frame(aTHX_ aMY_CXT);
-	    nret=call_method(cmethod, G_ARRAY|G_EVAL);
-	    SPAGAIN;
-	    oq=test_oq(aTHX_ aMY_CXT);
-	    pop_frame(aTHX_ aMY_CXT);
-	    if (ok=pop_results(aTHX_ nret, &ret, &e)) {
-		if (oq) {
-		    ok=0;
-		    oq_exception(&e);
-		}
-	    }
+	savestate(aTHX_ aMY_CXT);
+	if (push_args(aTHX_ object, 1, args)) {
+	    n=call_method(cmethod, G_ARRAY|G_EVAL);
+	    ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	}
-
+	SPAGAIN;
 	FREETMPS;
 	LEAVE;
-	
-	if (ok) return PL_unify(result, ret);
+	return ret;
     }
-    else type_error_atom_exception(method, &e);
-    return PL_raise_exception(e);
-
+    else raise_atom_expected(method);
+    return FALSE;
 }
 
