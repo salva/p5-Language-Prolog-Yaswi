@@ -1,0 +1,23 @@
+Revision history for Perl extension Language::Prolog::Yaswi.
+
+0.05  Wed Jan 29 2003
+	- corrections to the docs.
+
+0.04  Wed Jan 29 2003
+	- segv-handling seems to work so the recommendation to
+	  compile prolog without it has been removed.
+	- swi_init and swi_cleanup functions added.
+	- thread support added.
+	- documentation changes.
+
+0.03  Thu Jan 23 2003
+	- ported to MS Windows.
+	- problems with missing include headers corrected.
+
+0.02  Wed Jan 22 2003
+	- cleaned up for CPAN distribution.
+
+0.01  Thu Jan  9 17:20:27 2003
+	- original version; created by h2xs 1.22 with options
+		-AX -n Language::Prolog::Yaswi
+

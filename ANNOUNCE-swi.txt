@@ -1,0 +1,72 @@
+Hello,
+
+I have released Language::Prolog::Yaswi, a Perl module that
+implements a bidirectional interface between Perl and
+SWI-Prolog.
+
+It's a high level interface providing:
+
+1.- automatic data conversion between both languages:
+
+  prolog atoms, numbers, lists, etc are transparently
+  converted to perl scalars, arrays, etc. and the other way
+  when crossing the interface.
+
+
+2.- no maintenance tasks to be performed by the programmer:
+
+  all the resource allocation/deallocation, is performed
+  without any intervention from the programmer.
+
+
+3.- Perl object system available from prolog
+
+  perl objects can be referenced from prolog and their
+  methods called. This also means that most modules in the
+  CPAN can be used from prolog with little effort.
+
+
+I have uploaded the module to CPAN (it could take some time
+to reach all its mirrors).
+
+If a full perl installation is available in your system it
+can be easily installed with the CPAN module:
+
+  root@cabo:~# perl -MCPAN -eshell
+  cpan> install Language::Prolog::Yaswi
+
+if that doesn't work, then you would have to manually
+download the package from
+
+http://www.cpan.org/authors/id/S/SA/SALVA/Language-Prolog-Yaswi-0.02.tar.gz
+
+and follow the instructions in the README file (note that
+some other packages would be required).
+
+After installation the programming instructions can be read
+running
+
+  salva@cabo:~$ perldoc Language::Prolog::Yaswi
+
+
+
+This is a very early release, bugs should be expected.
+
+Threads are not supported yet
+
+It has not been tested on Windows
+
+
+
+Comments, suggestions, bug reports, etc. are welcome
+
+Bye,
+
+- Salva.
+
+
+
+BTW, The CPAN is the Comprehensive Perl Archive Network, an
+impressive repository of freely available perl modules. Take
+a look at http://www.cpan.org/ or at its more user friendly
+interface http://search.cpan.org/ .
