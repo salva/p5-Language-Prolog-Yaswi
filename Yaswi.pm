@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use strict;
 use warnings;
@@ -45,8 +45,11 @@ our @EXPORT_OK = ( @{$EXPORT_TAGS{query}},
 our @EXPORT = qw();
 
 use Carp;
+our @CARP_NOT=qw( Prolog::Language::Yaswi::Low
+		  Prolog::Language::Types );
+
 use File::Temp;
-use Language::Prolog::Types qw(:util F L C V isF isL isV);
+use Language::Prolog::Types qw(:util F L C V isF isL isV isN);
 use Language::Prolog::Yaswi::Low;
 
 
@@ -105,14 +108,16 @@ sub swi_result() {
 
 sub swi_vars {
     testquery();
-    return map {
+    my @res=map {
 	isV($_)     ? getvar($_) :
         isL($_)     ? L(swi_vars(prolog_list2perl_list($_))) :
 	isF($_)     ? F($_->functor => swi_vars($_->fargs)) :
         ($_ eq '*') ? getquery() :
+	isN($_)     ? $_ :
 	(ref($_) eq '') ? $_ :
 	croak "invalid mapping '$_'";
     } @_;
+    wantarray ? @res : $res[0]
 }
 
 sub swi_find_all ($;@) {
@@ -122,7 +127,7 @@ sub swi_find_all ($;@) {
 	# warn "new solution found\n";
 	push @r, swi_vars(@_);
     }
-    return @r
+    return wantarray ? @r : $r[0]
 }
 
 sub swi_find_one ($;@) {

@@ -1,5 +1,10 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.07  Feb 21 2005
+	- map nil on swi_vars
+	- swi_vars returns first var mapped on scalar context
+	- swi_find_all returns first result on scalar context
+
 0.06  Feb 13 2005
 	- convert perl magic values correctly
 	- some remaining debugging output supressed
