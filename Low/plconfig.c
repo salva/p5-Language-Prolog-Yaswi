@@ -1,4 +1,4 @@
-char *PL_base="/usr/local/lib/pl-5.1.6";
-char *PL_arch="i686-linux";
-char *PL_exe="/usr/local/lib/pl-5.1.6/bin/i686-linux/pl";
-char *PL_path="/usr/local/lib/pl-5.1.6/bin/i686-linux/";
+char *PL_base="/usr/lib/swi-prolog";
+char *PL_arch="i386";
+char *PL_exe="/usr/lib/swi-prolog/bin/i386/pl";
+char *PL_path="/usr/lib/swi-prolog/bin/i386/";

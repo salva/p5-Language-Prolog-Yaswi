@@ -26,8 +26,15 @@ if ($^O=~/Win32/) {
     $plvar{PLPATH}=qq($plvar{PLBASE}/bin);
 }
 else {
-    $plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/ ";
-    $plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? '-lplmt' : '-lpl';
+    if ($plvar{PLVERSION} >= 50400) {
+	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/lib/$plvar{PLARCH}/ ";
+	$plvar{PLLIBS}.=' -lplmt';
+    }
+    else {	
+	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/ ";
+	$plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? '-lplmt' : '-lpl';
+    }
+
     # $plvar{PLLIBS}.=' -export-dynamic';
     $plvar{PLINC}="-I$plvar{PLBASE}/include";
     $plvar{PLEXE}="$plvar{PLBASE}/bin/$plvar{PLARCH}/pl";
