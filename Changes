@@ -1,5 +1,8 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.08  Feb 22 2005
+	- documents swi_eval and swi_parse
+
 0.07  Feb 21 2005
 	- map nil on swi_vars
 	- swi_vars returns first var mapped on scalar context

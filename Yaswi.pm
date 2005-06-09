@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use strict;
 use warnings;
@@ -365,6 +365,17 @@ as C<swi_find_all> but only for the first solution.
 
 runs the query once and return true if a solution was found or false
 otherwise.
+
+=item swi_parse(@strings)
+
+commodity interface to prolog predicate C<atom_to_term/3>. Converts
+strings to prolog terms.
+
+=item swi_eval(@strings)
+
+parses C<@strings> and calls them on the prolog engine.
+
+
 
 =back
 
