@@ -127,24 +127,15 @@ push_args(pTHX_ term_t obj, int obj_ok, term_t args) {
     return TRUE;
 }
 
-static void
-raise_atom_expected(term_t nonatom) {
-    term_t e=PL_new_term_ref();
-    PL_unify_term(e,
-		  PL_FUNCTOR_CHARS, "type_error", 2,
-		  PL_CHARS, "atom",
-		  PL_TERM, nonatom);
-    PL_raise_exception(e);
-}
-
 static foreign_t swi2perl_sub(term_t name,
 			      term_t args,
 			      term_t result ) {
-    char *cname;
-    if (PL_get_atom_chars(name, &cname)) {
-	MY_dTHX;
-	dMY_CXT;
-	dSP;
+    MY_dTHX;
+    dMY_CXT;
+    dSP;
+
+    SV *svname = swi2perl_atom_sv_ex(aTHX_ name);
+    if (svname) {
 	int n;
 	int ret=FALSE;
 
@@ -152,8 +143,9 @@ static foreign_t swi2perl_sub(term_t name,
 	SAVETMPS;
 	PUSHMARK(SP);
 	savestate(aTHX_ aMY_CXT);
+	sv_2mortal(svname);
 	if (push_args(aTHX_ 0, 0, args)) {
-	    n=call_pv(cname, G_ARRAY | G_EVAL);
+	    n = call_sv(svname, G_ARRAY | G_EVAL);
 	    ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	}
 
@@ -163,27 +155,25 @@ static foreign_t swi2perl_sub(term_t name,
 
 	return ret;
     }
-    else raise_atom_expected(name);
     return FALSE;
 }
 
 static foreign_t swi2perl_eval(term_t code,
 			       term_t result) {
-    char *ccode;
-    term_t e;
-    if (PL_get_atom_chars(code, &ccode)) {
-	MY_dTHX;
-	dMY_CXT;
-	dSP;
+    MY_dTHX;
+    dMY_CXT;
+    dSP;
+    
+    SV *svcode = swi2perl_atom_sv_ex(aTHX_ code);
+    if (svcode) {
 	int n;
 	int ret=FALSE;
-	SV *svcode;
 
 	ENTER;
 	SAVETMPS;
 	PUSHMARK(SP);
 	savestate(aTHX_ aMY_CXT);
-	svcode=sv_2mortal(newSVpv(ccode, 0));
+	sv_2mortal(svcode);
 	n=eval_sv(svcode, G_ARRAY | G_EVAL);
 	ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	SPAGAIN;
@@ -191,7 +181,6 @@ static foreign_t swi2perl_eval(term_t code,
 	LEAVE;
 	return ret;
     }
-    else raise_atom_expected(code);
     return FALSE;
 }
 
@@ -199,20 +188,20 @@ static foreign_t swi2perl_method(term_t object,
 				 term_t method,
 				 term_t args,
 				 term_t result) {
-    char *cmethod;
-    term_t e;
-    if (PL_get_atom_chars(method, &cmethod)) {
-	MY_dTHX;
-	dMY_CXT;
-	dSP;
+    MY_dTHX;
+    dMY_CXT;
+    dSP;
+    SV *svmethod = swi2perl_atom_sv_ex(aTHX_ method);
+    if (svmethod) {
 	int n;
 	int ret=FALSE;
 	ENTER;
 	SAVETMPS;
 	PUSHMARK(SP);
 	savestate(aTHX_ aMY_CXT);
+	sv_2mortal(svmethod);
 	if (push_args(aTHX_ object, 1, args)) {
-	    n=call_method(cmethod, G_ARRAY|G_EVAL);
+	    n=call_method(SvPV_nolen(svmethod), G_ARRAY|G_EVAL);
 	    ret=check_error_and_pop_results(aTHX_ aMY_CXT_ result, n);
 	}
 	SPAGAIN;
@@ -220,7 +209,6 @@ static foreign_t swi2perl_method(term_t object,
 	LEAVE;
 	return ret;
     }
-    else raise_atom_expected(method);
     return FALSE;
 }
 

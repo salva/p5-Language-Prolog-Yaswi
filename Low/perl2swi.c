@@ -36,21 +36,19 @@ pl_unify_perl_ifunctor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
     AV *array=(AV *)o;
     int i;
     int arity;
-    char *name;
-    STRLEN len;
-    atom_t name_a;
 
     if (SvTYPE(o)!=SVt_PVAV) {
 	warn ("implementation mismatch, " TYPEINTPKG "::functor object is not an array ref");
 	return FALSE;
     }
 
-    name=SvPV(my_fetch(aTHX_ array, 0), len);
-    name_a=PL_new_atom_nchars(len, name);
-
     arity=av_len(array);
     if (arity>0) {
+	atom_t name_a;
+	if ( ! perl2swi_new_atom(aTHX_ my_fetch(aTHX_ array, 0), &name_a) )
+	    return FALSE;
 	if ( PL_unify_functor(t, PL_new_functor(name_a, arity)) ) {
+	    PL_unregister_atom(name_a);
 	    for(i=1; i<=arity; i++) {
 		term_t arg = PL_new_term_ref();
 		if ( !PL_unify_arg(i, t, arg) ||
@@ -60,9 +58,12 @@ pl_unify_perl_ifunctor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
 	    }
 	    return TRUE;
 	}
+	PL_unregister_atom(name_a);
 	return FALSE;
     }
-    return PL_unify_atom(t, name_a);
+    else {
+	return pl_unify_perl_sv(aTHX_ t, my_fetch(aTHX_ array, 0), refs, cells);
+    }
 }
 
 int
@@ -139,17 +140,18 @@ static int
 pl_unify_perl_functor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
     dSP;
     int arity;
-    char *name;
-    STRLEN len;
-    atom_t name_a;
+    SV *name;
 
-    name=SvPV(call_method__sv(aTHX_ o, "functor"), len);
-    name_a=PL_new_atom_nchars(len, name);
-
+    name = call_method__sv(aTHX_ o, "functor");
     arity=call_method__int(aTHX_ o, "arity");
     if (arity>0) {
+	atom_t name_a;
+	if ( ! perl2swi_new_atom(aTHX_ call_method__sv(aTHX_ o, "functor"), &name_a) )
+	    return FALSE;
+
 	if ( PL_unify_functor(t, PL_new_functor(name_a, arity)) ) {
 	    int i;
+	    PL_unregister_atom(name_a);
 	    for(i=1; i<=arity; i++) {
 		term_t arg;
 		SV *farg;
@@ -166,9 +168,10 @@ pl_unify_perl_functor(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
 	    }
 	    return TRUE;
 	}
+	PL_unregister_atom(name_a);
 	return FALSE;
     }
-    return PL_unify_atom(t, name_a);
+    return pl_unify_perl_sv(aTHX_ t, name, refs, cells);
 }
 
 static int
@@ -312,18 +315,60 @@ pl_unify_perl_sv(pTHX_ term_t t, SV *sv, AV *refs, AV *cells) {
 	STRLEN len;
 	char *name;
 	name = SvPV(sv, len);
+
+#ifdef REP_UTF8
+	if (SvUTF8(sv))
+	    return PL_unify_chars(t, PL_ATOM|REP_UTF8, len, name);
+#endif
 	return PL_unify_atom_nchars(t, len, name);
     }
+
 }
 
-void perl2swi_module(pTHX_ SV *sv, module_t *m) {
+int
+perl2swi_module(pTHX_ SV *sv, module_t *m) {
     /* warn ("converting %_ to module\n", sv); */
     if(SvOK(sv)) {
-	atom_t name=PL_new_atom(SvPV_nolen(sv));
-	PL_get_module(name, m);
-	PL_unregister_atom(name);	
+	STRLEN len;
+	char *str = SvPV(sv, len);
+#ifdef REP_UTF8
+	if (SvUTF8(sv)) {
+	    term_t t = PL_new_term_ref();
+	    if (!(PL_unify_chars(t, PL_ATOM|REP_UTF8, len, str) &&
+		  PL_get_module(t, m)))
+		return FALSE;
+	}
+	else
+#endif
+	{
+	    atom_t name=PL_new_atom_nchars(len, str);
+	    *m = PL_new_module(name);
+	    PL_unregister_atom(name);
+	}
     }
     else {
 	*m=0;
     }
+    return TRUE;
+}
+
+int
+perl2swi_new_atom(pTHX_ SV *sv, atom_t *a) {
+    STRLEN len;
+    char *str;
+    str = SvPV(sv, len);
+#ifdef REP_UTF8
+    if (SvUTF8(sv)) {
+	term_t t = PL_new_term_ref();
+	if (!(PL_unify_chars(t, PL_ATOM|REP_UTF8, len, str) &&
+	      PL_get_atom(t, a)))
+	    return FALSE;
+	PL_register_atom(*a);
+    }
+    else
+#endif
+    {
+	*a = PL_new_atom_nchars(len, str);
+    }
+    return TRUE;
 }

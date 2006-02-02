@@ -1,14 +1,16 @@
-use Test::More tests => 8;
+#!/usr/bin/perl
+
+use Test::More tests => 20;
 
 use strict;
 use warnings;
 
 use Language::Prolog::Types ':short';
 use Language::Prolog::Types::overload;
-use Language::Prolog::Sugar functors => [qw( man god mortal foobolize)],
+use Language::Prolog::Sugar functors => [qw( man god mortal tubolize foobolize bartolize)],
                             vars     => [qw( X )];
 
-use Language::Prolog::Yaswi qw(:query :assert :load);
+use Language::Prolog::Yaswi qw(:query :assert :load :context);
 
 swi_assert(mortal(X) => man(X));
 
@@ -33,12 +35,34 @@ is( swi_find_one(god(X), X), 'zeus', 'swi_find_one');
 
 swi_inline <<CODE;
 
+tubolize(foo).
+tubolize(bar).
+
+tubolize(X, X).
+
+CODE
+
+is_deeply( [swi_find_all(tubolize(X), X )], [qw(foo bar)], "swi_inline");
+
+for (1..10) {
+    my $uni = pack "U*" => map rand(2**30), 1..10+rand(20);
+    is (swi_find_one(tubolize($uni, X), X), $uni, "unicode $_");
+}
+
+swi_inline_module <<CODE;
+
 :- module(foo, [foobolize/1]).
 
 foobolize(foo).
 foobolize(bar).
 
+bartolize(9).
+
 CODE
 
 is_deeply( [swi_find_all(foobolize(X), X )], [qw(foo bar)], "swi_inline");
 
+{
+  local $swi_module = 'foo';
+  is ( swi_find_one( bartolize(X), X), 9, '$swi_module');
+}

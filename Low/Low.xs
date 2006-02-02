@@ -112,14 +112,13 @@ OUTPUT:
 
 
 void
-yaswi_openquery(query_obj, module, ctx_module)
+yaswi_openquery(query_obj, module)
     SV *query_obj;
     SV *module;
-    SV *ctx_module
 PREINIT:
     dMY_CXT;
     term_t q, arg0;
-    module_t m, cm;
+    module_t m;
     predicate_t predicate;
     AV *refs, *cells;
 PPCODE:
@@ -139,10 +138,9 @@ PPCODE:
 	    for (i=0; i<arity; i++) {
 		PL_unify_arg(i+1, q, arg0+i);
 	    }
-	    perl2swi_module(aTHX_ ctx_module, &cm);
 	    perl2swi_module(aTHX_ module, &m);
 	    predicate=PL_pred(functor, m);
-	    sv_setiv(c_qid, PL_open_query(cm,
+	    sv_setiv(c_qid, PL_open_query(0,
 					  PL_Q_NODEBUG|PL_Q_CATCH_EXCEPTION,
 					  predicate, arg0));
 

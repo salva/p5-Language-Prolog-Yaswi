@@ -60,12 +60,7 @@ static PL_blob_t perl_opaque = {
 
 int
 pl_unify_perl_iopaque(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
-    dSP;
-    static functor_t opaque_f;
-    int ret=FALSE;
-
-    sv_dump(o);
-    return TRUE;
+    return pl_unify_perl_opaque(aTHX_ t, o, refs, cells);
 }
 
 int

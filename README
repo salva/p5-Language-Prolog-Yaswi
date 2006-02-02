@@ -36,7 +36,7 @@ bug report!).
 BUGS
 
 
-Requires SWI-Prolog 5.4.x or newer
+Requires SWI-Prolog 5.6.x or newer
 
 Loading of prolog shared libraries doesn't work, this is due to a
 limitation on SWI-Prolog itself.
@@ -69,7 +69,7 @@ these other modules and libraries:
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2003-2005 Salvador Fandiño
+Copyright (C) 2003-2006 Salvador Fandiño
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

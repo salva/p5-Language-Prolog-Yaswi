@@ -49,8 +49,22 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
     }
     if (PL_is_atom(t)) {
 	char *v;
-	PL_get_atom_chars(t, &v);
-	return newSVpv(v, 0);
+	unsigned int len;
+#ifdef REP_UTF8
+	int type = PL_term_type(t);
+	if (PL_get_atom_nchars(t, &len, &v))
+	    return newSVpv(v, len);
+	else {
+	    SV *ret;
+	    PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_UTF8);
+	    ret = newSVpv(v, len);
+	    SvUTF8_on(ret);
+	    return ret;
+	}
+#else
+	PL_get_atom_nchars(t, &len, &v);
+	return newSVpv(v, len);
+#endif
     }
     if (PL_is_compound(t)) {
 	SV *ref;
@@ -108,11 +122,65 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
     }
     if (PL_is_string(t)) {
 	char *v;
-	int len;
+	unsigned int len;
+
+#ifdef REP_UTF8
+	if (PL_get_string_chars(t, &v, &len))
+	    return newSVpv(v, len);
+	else {
+	    SV *ret;
+	    PL_get_nchars(t, &len, &v, CVT_STRING|BUF_DISCARDABLE|REP_UTF8);
+	    ret = newSVpv(v, len);
+	    SvUTF8_on(ret);
+	    return ret;
+	}
+#else
 	PL_get_string_chars(t, &v, &len);
 	return newSVpv(v, len);
+#endif
+
     }
     warn ("unknow SWI-Prolog type, using undef");
     return &PL_sv_undef;
 }
 
+SV *swi2perl_atom_sv(pTHX_ term_t t) {
+    char *v;
+    unsigned int len;
+#ifdef REP_UTF8
+    if (PL_get_atom_nchars(t, &len, &v))
+	return newSVpv(v, len);
+    else {
+	SV *ret;
+	if (PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_UTF8)) {
+	    ret = newSVpv(v, len);
+	    SvUTF8_on(ret);
+	    return ret;
+	}
+    }
+#else
+    if (PL_get_atom_nchars(t, &len, &v)) {
+	return newSVpv(v, len);
+    }
+#endif
+    return NULL;
+}
+
+static void
+raise_atom_expected(term_t nonatom) {
+    term_t e=PL_new_term_ref();
+    PL_unify_term(e,
+		  PL_FUNCTOR_CHARS, "type_error", 2,
+		  PL_CHARS, "atom",
+		  PL_TERM, nonatom);
+    PL_raise_exception(e);
+}
+
+SV *swi2perl_atom_sv_ex(pTHX_ term_t t) {
+    SV *ret = swi2perl_atom_sv(aTHX_ t);
+    if (ret)
+	return ret;
+
+    raise_atom_expected(t);
+    return NULL;
+}

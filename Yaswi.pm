@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use strict;
 use warnings;
@@ -21,6 +21,7 @@ our %EXPORT_TAGS = ( 'query' => [ qw( swi_set_query
 				      swi_parse
 				      swi_eval )],
 		     'load' => [ qw( swi_inline
+				     swi_inline_module
 				     swi_consult
 				     swi_use_modules )],
 		     'assert' => [ qw( swi_assert
@@ -28,10 +29,9 @@ our %EXPORT_TAGS = ( 'query' => [ qw( swi_set_query
 				       swi_assertz
 				       swi_facts  )],
 		     'interactive' => [ qw( swi_toplevel )],
-		     'context' => [ qw( $swi_module
-					$swi_ctx_module
-					$swi_temp_dir
-					$swi_converter) ],
+		     'context' => [ qw( *swi_module
+					*swi_temp_dir
+					*swi_converter) ],
 		     'run' => [ qw( swi_init
 				    swi_cleanup )] );
 
@@ -54,10 +54,7 @@ use Language::Prolog::Yaswi::Low;
 
 
 our $swi_module = undef;
-our $swi_ctx_module = undef;
-
 our $swi_temp_dir = undef;
-
 our $swi_debug = undef;
 
 
@@ -72,7 +69,7 @@ sub swi_toplevel();
 
 *swi_converter=*converter;
 
-sub swi_set_query_module($$$) {
+sub swi_set_query_module {
     @{&openquery(@_)}
 }
 
@@ -80,10 +77,9 @@ sub swi_cut();
 *swi_cut=\&cutquery;
 
 
-sub swi_set_query (@) {
+sub swi_set_query {
     return swi_set_query_module(C(',', @_),
-				$swi_module,
-				$swi_ctx_module);
+				$swi_module);
 }
 
 sub swi_next() {
@@ -196,6 +192,15 @@ sub swi_eval {
 }
 
 sub swi_inline {
+    _swi_inline(load_files => @_)
+}
+
+sub swi_inline_module {
+    _swi_inline(use_module => @_)
+}
+
+sub _swi_inline {
+    my $action = shift;
     my $tmp=File::Temp->new(TEMPLATE => 'swi_inline_XXXXXXXX', SUFFIX => '.swi',
 			    ((defined $swi_temp_dir) ?
 			     (DIR => $swi_temp_dir) : ()));
@@ -205,7 +210,7 @@ sub swi_inline {
     $tmp->print(@_, "\n");
     $tmp->close;
 
-    eval { swi_call F(load_files => $fn, []) };
+    eval { swi_call F($action => $fn) };
     unlink $fn;
     die $@ if $@;
 }
@@ -290,16 +295,17 @@ Grouped by export tag:
 
 =item swi_set_query($query1, $query2, $query3, ...)
 
-Compose a query with all its parameters and sets it. Return the set of
-free variables found in the query.
+Composes a query with all the parameters given and sets it.
 
-=item swi_set_query_module($query, $module, $ctx_module)
+The set of free variables found in the query is returned.
 
-Allows to set a query in a different module than the default.
+=item swi_set_query_module($query, $module)
+
+Allows to set a query in a module different than the default.
 
 =item swi_result
 
-Return the values binded to the variables in the query.
+Returns the values binded to the variables in the query.
 
 =item swi_next
 
@@ -308,7 +314,7 @@ Iterates over the query solutions.
 If a new solution is available returns true, if not, closes the query
 and returns false.
 
-It should be called after C<swi_set_query(...)> to obtain the first
+It has to be called after C<swi_set_query(...)> to obtain the first
 solution.
 
 =item swi_var($var)
@@ -400,6 +406,10 @@ dumps C<@code> to a temporary file and C<consult>s it from prolog.
 Use C<$swi_temp_dir> to change the directory where the file is
 created.
 
+=item swi_inline_module @code
+
+similar to C<swi_inline()> but using C<use_module/1> to load the file.
+
 =item swi_consult @files
 
 =item swi_use_modules @modules
@@ -444,10 +454,7 @@ i.e.:
 
 =item $swi_module
 
-=item $swi_ctx_module
-
-allow to change the module and the context module for the upcoming
-queries.
+allow to change the module for the upcoming queries.
 
 use the C<local> operator when changing their values ALWAYS!!!
 
@@ -460,12 +467,14 @@ i.e.:
 
 allows to change the way data is converter from Perl to Prolog.
 
-You should really not use it for any thing different than configuring
+You should really not use it for anything different than configuring
 perl classes as opaque, i.e.:
 
   $swi_converter->pass_as_opaque(qw(LWP::UserAgent
                                     HTTP::Request
                                     HTTP::Result))
+
+... unless you know what you are doing!!!
 
 =item $swi_temp_dir
 
@@ -571,14 +580,9 @@ SWI-Prolog documentation L<http://www.swi-prolog.org/>, L<pl(1)>,
 L<Languages::Prolog::Types> and L<Language::Prolog::Sugar>.
 
 
-=head1 AUTHOR
-
-Salvador Fandiño, E<lt>sfandino@yahoo.comE<gt>
-
-
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2005 by Salvador Fandiño
+Copyright 2003-2006 by Salvador FandiE<ntilde>o E<lt>sfandino@yahoo.comE<gt>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

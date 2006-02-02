@@ -1,5 +1,15 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.09  Feb 2 2005
+	- add support for swi_inline_module.
+	- corrected bug on code converting perl scalars to prolog
+	  modules.
+	- export globs instead of scalars for :context items so they
+	  can be properly localized
+	- remove useless context module support
+	- handle iopaques properly
+	- removed some bad prototypes
+
 0.08  Feb 22 2005
 	- documents swi_eval and swi_parse
 
