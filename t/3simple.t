@@ -45,7 +45,8 @@ CODE
 is_deeply( [swi_find_all(tubolize(X), X )], [qw(foo bar)], "swi_inline");
 
 for (1..10) {
-    my $uni = pack "U*" => map rand(2**30), 1..10+rand(20);
+    # my $uni = pack "U*" => map rand(2**30), 1..10+rand(20);
+    my $uni = pack "b*" => map rand(2**6), 1..10+rand(20);
     is (swi_find_one(tubolize($uni, X), X), $uni, "unicode $_");
 }
 
