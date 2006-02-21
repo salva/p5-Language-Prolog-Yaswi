@@ -510,6 +510,8 @@ arguments.
 
 =back
 
+=back
+
 =head2 CALLBACKS
 
 Yaswi adds to SWI-Prolog three new predicates to call perl back.

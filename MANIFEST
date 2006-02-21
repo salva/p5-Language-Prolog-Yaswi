@@ -34,5 +34,6 @@ README
 t/1Low.t
 t/2Yaswi.t
 t/3simple.t
+t/4pods.t
 Yaswi.pm
 META.yml                                 Module meta-data (added by MakeMaker)

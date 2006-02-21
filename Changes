@@ -1,5 +1,9 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.10
+	- add pod testing
+	- pod errors corrected
+
 0.09  Feb 2 2005
 	- add support for swi_inline_module.
 	- corrected bug on code converting perl scalars to prolog
