@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use strict;
 use warnings;
@@ -535,7 +535,7 @@ calls a perl sub.
 
 calls the method C<Method> from the perl object C<Object>.
 
-To get objects passed to prolog as opaques instead of marshaled to
+To get objects passed to prolog as opaques instead of marshaled into
 prolog types, its class (or one of its parent classes) has to be
 previously register as opaque with the $swi_converter object. i.e.:
 
@@ -580,6 +580,8 @@ xpce).
 
 SWI-Prolog documentation L<http://www.swi-prolog.org/>, L<pl(1)>,
 L<Languages::Prolog::Types> and L<Language::Prolog::Sugar>.
+
+L<AI::Prolog> is a Prolog implementation in pure Perl.
 
 
 =head1 COPYRIGHT AND LICENSE

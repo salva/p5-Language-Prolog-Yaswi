@@ -1,12 +1,12 @@
 package Language::Prolog::Yaswi::Low;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use strict;
 use warnings;
 
 require Exporter;
-our @ISA = qw(Exporter);
+our @ISA = qw(Exporter DynaLoader);
 our @EXPORT = qw( init
 		  cleanup
 		  toplevel
@@ -20,12 +20,10 @@ our @EXPORT = qw( init
 		  getallvars
 		  $converter );
 
-
 use Carp;
 use Language::Prolog::Types::Converter;
 
-our $converter=Language::Prolog::Types::Converter->new();
-our @args;
+our $converter = Language::Prolog::Types::Converter->new();
 
 # our @fids;
 
@@ -47,10 +45,18 @@ sub getquery () {
     swi2perl($query);
 }
 
-require XSLoader;
-XSLoader::load('Language::Prolog::Yaswi::Low', $VERSION);
+# require XSLoader;
+# XSLoader::load('Language::Prolog::Yaswi::Low', $VERSION);
 
-@args=(PL_EXE(), '-q');
+our $dl_load_flags;
+$dl_load_flags = 0x1 unless defined $dl_load_flags;
+sub dl_load_flags { $dl_load_flags }
+
+require DynaLoader;
+__PACKAGE__->bootstrap;
+
+our @args;
+@args = (PL_EXE(), '-q') unless @args;
 
 sub init {
     @args=(PL_EXE(), @_);
@@ -76,24 +82,24 @@ Language::Prolog::Yaswi::Low - Low level interface to SWI-Prolog
 
 =head1 DESCRIPTION
 
-Stub documentation for Language::Prolog::Yaswi::Low, created by h2xs.
+Low level interface to SWI-Prolog.
 
-=head2 EXPORT
+=head2 SETTINGS
 
-lots of things by default.
-
+The variable C<$Language::Prolog::Yaswi::Low::dl_load_flags> can be
+used to change the way the XS part of the module is loaded. The
+default value (0x01) allows to use Prolog extensions written in C in
+most architectures but it could introduce conflicts with other Perl
+modules.
 
 =head1 SEE ALSO
 
-L<Language::Prolog::Yaswi>
+L<Language::Prolog::Yaswi>.
 
-=head1 AUTHOR
-
-Salva, E<lt>sfandino@yahoo.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003 by Salvador Fandiño
+Copyright 2003-2006 by Salvador Fandiño (sfandino@yahoo.com).
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
