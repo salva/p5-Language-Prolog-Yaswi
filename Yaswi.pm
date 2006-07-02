@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use strict;
 use warnings;
@@ -369,7 +369,7 @@ as C<swi_find_all> but only for the first solution.
 
 =item swi_call($query)
 
-runs the query once and return true if a solution was found or false
+runs the query once and returns true if a solution was found or false
 otherwise.
 
 =item swi_parse(@strings)
@@ -524,20 +524,22 @@ explicitly calling scalar.
 
 =item perl5_eval(+Code, -Result)
 
-makes perl evaluate the string C<Code> (really a Prolog atom) and
-returns the results.
+evaluates the Perl code passed on the atom C<Code> and
+return the results as a list in C<Result>.
 
 =item perl5_call(+Sub, +Args, -Result)
 
-calls a perl sub.
+calls the Perl sub C<Sub> with the arguments in the list C<Args> and
+returns the list of results in C<Result>.
 
 =item perl5_method(+Object, +Method, +Args, -Result)
 
 calls the method C<Method> from the perl object C<Object>.
 
-To get objects passed to prolog as opaques instead of marshaled into
-prolog types, its class (or one of its parent classes) has to be
-previously register as opaque with the $swi_converter object. i.e.:
+To get a Perl object passed to prolog as an opaque value instead of
+marshaled into prolog types, its class (or one of its parent classes)
+has to be previously registered as opaque with the $swi_converter
+object. i.e.:
 
   perl5_eval('$Language::Prolog::Yaswi::swi_converter \
                -> pass_as_opaque("HTTP::Request")',_),
@@ -545,8 +547,8 @@ previously register as opaque with the $swi_converter object. i.e.:
   perl5_method('HTTP::Request', new, [], [Request]),
   perl5_method(Request, as_string, [], [Text]).
 
-Registering class C<UNIVERSAL> makes all objects to be passed to
-prolog as opaques.
+Registering class C<UNIVERSAL> causes all objects to be passed as
+opaques to prolog.
 
 
 =back
@@ -572,16 +574,15 @@ from this limitation.
 
 =head1 KNOWN BUGS
 
-Under Unix, it's not possible to load prolog shared libraries (i.e.
-xpce).
-
+It is not possible to use Prolog C extensions (i.e. pce) in every
+OS. Though it works at least on Linux, Solaris and Windows.
 
 =head1 SEE ALSO
 
 SWI-Prolog documentation L<http://www.swi-prolog.org/>, L<pl(1)>,
 L<Languages::Prolog::Types> and L<Language::Prolog::Sugar>.
 
-L<AI::Prolog> is a Prolog implementation in pure Perl.
+L<AI::Prolog> is a well maintained Prolog implementation in pure Perl.
 
 
 =head1 COPYRIGHT AND LICENSE
