@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use strict;
 use warnings;
@@ -357,7 +357,7 @@ returns the array C<([1], [3], [7], [21])>.
 
 More elaborate constructions can be used:
 
-  %mothers=swi_find_all(mother(X,Y), X, Y)
+  %mothers = swi_find_all(mother(X,Y), X, Y)
 
 
 There is also an example of its usage in the SYNOPSIS.
@@ -432,8 +432,8 @@ adds new definitions at the top of the database
 
 =item swi_facts(@facts)
 
-commodity subroutine to add several facts (facts, doesn't have body)
-to the database in one call.
+commodity subroutine to add several facts to the database in one call
+(a fact is a predicate with an empty body).
 
 i.e.:
 
@@ -576,6 +576,11 @@ from this limitation.
 
 It is not possible to use Prolog C extensions (i.e. pce) in every
 OS. Though it works at least on Linux, Solaris and Windows.
+
+Unicode is not fully supported.
+
+Variable attributes are ignored when they cross the Perl/Prolog
+interface.
 
 =head1 SEE ALSO
 
