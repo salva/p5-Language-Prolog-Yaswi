@@ -1,5 +1,8 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.14  Nov 24 2006
+        - pod error corrected
+
 0.13  Nov 24 2006
         - new experimental unicode support, now it is possible to pass
           unicode data back and forward through the Perl/Prolog

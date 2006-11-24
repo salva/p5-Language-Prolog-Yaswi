@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use strict;
 use warnings;
@@ -451,11 +451,12 @@ i.e.:
              woman('teresa'),
              woman('mary') );
 
-=back
-
 =item swi_retractall(@heads)
 
 loops over C<@heads> calling C<retractall/1> Prolog predicate.
+
+=back
+
 
 =item :context
 
