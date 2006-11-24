@@ -1,5 +1,11 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.13  Nov 24 2006
+        - new experimental unicode support, now it is possible to pass
+          unicode data back and forward through the Perl/Prolog
+          interface.
+        - commodity function swi_retractall added
+
 0.12  Sep 25 2006
         - CLONE was not expecting arguments (bug reported by Yohann
           Thomas).
