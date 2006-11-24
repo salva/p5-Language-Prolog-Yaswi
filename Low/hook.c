@@ -18,7 +18,7 @@ int hook_set=0;
 
 static int my_agc_hook(atom_t a) {
     if(!strcmp(OPAQUE_FUNCTOR, PL_atom_chars(a))) {
-        char *oname;
+        const char *oname;
         int olen;
 	dTHX;
 	dSP;
