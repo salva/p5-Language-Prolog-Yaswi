@@ -18,13 +18,16 @@ int hook_set=0;
 
 static int my_agc_hook(atom_t a) {
     if(!strcmp(OPAQUE_FUNCTOR, PL_atom_chars(a))) {
+        char *oname;
+        int olen;
 	dTHX;
 	dSP;
 	ENTER;
 	SAVETMPS;
+        oname = PL_atom_nchars(a, &olen);
 	call_sub_sv__sv(aTHX_
 			PKG "::unregister_opaque",
-			sv_2mortal(newSVpv(PL_atom_chars(a),0)));
+			sv_2mortal(newSVpv(oname, olen)));
 	FREETMPS;
 	LEAVE;
     }

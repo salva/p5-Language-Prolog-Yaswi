@@ -47,25 +47,10 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	sv_bless(ref, gv_stashpv(TYPEINTPKG "::ulist", 1));
 	return ref;
     }
-    if (PL_is_atom(t)) {
-	char *v;
-	unsigned int len;
-#ifdef REP_UTF8
-	int type = PL_term_type(t);
-	if (PL_get_atom_nchars(t, &len, &v))
-	    return newSVpv(v, len);
-	else {
-	    SV *ret;
-	    PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_UTF8);
-	    ret = newSVpv(v, len);
-	    SvUTF8_on(ret);
-	    return ret;
-	}
-#else
-	PL_get_atom_nchars(t, &len, &v);
-	return newSVpv(v, len);
-#endif
-    }
+    
+    if (PL_is_atom(t))
+        return swi2perl_atom_sv(aTHX_ t);
+
     if (PL_is_compound(t)) {
 	SV *ref;
 	int i;
@@ -80,12 +65,14 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	    SvREFCNT_inc(ref);
 	}
 	else {
+            char * fname;
+            int flen;
 	    AV *functor=newAV();
 	    ref=newRV_noinc((SV *)functor);
 	    sv_bless(ref, gv_stashpv(TYPEINTPKG "::functor", 1));
-
 	    av_extend(functor, arity+1);
-	    av_store(functor, 0, newSVpv(PL_atom_chars(atom), 0));
+            fname = PL_atom_nchars(atom, &flen);
+	    av_store(functor, 0, newSVpvn(fname, flen));
 	    for (i=1; i<=arity; i++) {
 		term_t arg=PL_new_term_ref();
 		PL_get_arg(i, t, arg);
@@ -148,15 +135,16 @@ SV *swi2perl_atom_sv(pTHX_ term_t t) {
     char *v;
     unsigned int len;
 #ifdef REP_UTF8
-    if (PL_get_atom_nchars(t, &len, &v))
-	return newSVpv(v, len);
-    else {
-	SV *ret;
-	if (PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_UTF8)) {
-	    ret = newSVpv(v, len);
-	    SvUTF8_on(ret);
-	    return ret;
-	}
+    if (PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_ISO_LATIN_1)) {
+        fprintf(stderr, "latin1\n"); fflush(stderr);
+        return newSVpv(v, len);
+    }
+    if (PL_get_nchars(t, &len, &v, CVT_ATOM|BUF_DISCARDABLE|REP_UTF8)) {
+        SV *ret;
+        ret = newSVpv(v, len);
+        SvUTF8_on(ret);
+        fprintf(stderr, "utf8\n"); fflush(stderr);
+        return ret;
     }
 #else
     if (PL_get_atom_nchars(t, &len, &v)) {

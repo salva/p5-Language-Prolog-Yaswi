@@ -38,7 +38,8 @@ BOOT:
 PROTOTYPES: ENABLE
 
 void
-yaswi_CLONE()
+yaswi_CLONE(klass)
+    SV *klass
 CODE:
     init_cxt(aTHX);
 
