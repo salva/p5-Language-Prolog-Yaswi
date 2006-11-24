@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use strict;
 use warnings;
@@ -27,7 +27,8 @@ our %EXPORT_TAGS = ( 'query' => [ qw( swi_set_query
 		     'assert' => [ qw( swi_assert
 				       swi_asserta
 				       swi_assertz
-				       swi_facts  )],
+				       swi_facts
+                                       swi_retractall )],
 		     'interactive' => [ qw( swi_toplevel )],
 		     'context' => [ qw( *swi_module
 					*swi_temp_dir
@@ -157,6 +158,12 @@ sub swi_asserta {
     my $head=shift;
     defined $head or croak "swi_asserta called without head";
     swi_call F(asserta => C(':-' => $head, C(',', @_)))
+}
+
+sub swi_retractall {
+    for my $head (@_) {
+        swi_call F(retractall => $head);
+    }
 }
 
 sub swi_facts {
@@ -424,7 +431,7 @@ similar to C<swi_inline()> but using C<use_module/1> to load the file.
 
 =item swi_assertz($head =E<gt> @body)
 
-add new definitions at the botton of the database
+add new definitions at the bottom of the database
 
 =item swi_asserta($head =E<gt> @body)
 
@@ -445,6 +452,10 @@ i.e.:
              woman('mary') );
 
 =back
+
+=item swi_retractall(@heads)
+
+loops over C<@heads> calling C<retractall/1> Prolog predicate.
 
 =item :context
 
@@ -577,7 +588,7 @@ from this limitation.
 It is not possible to use Prolog C extensions (i.e. pce) in every
 OS. Though it works at least on Linux, Solaris and Windows.
 
-Unicode is not fully supported.
+Unicode support is experimental.
 
 Variable attributes are ignored when they cross the Perl/Prolog
 interface.
