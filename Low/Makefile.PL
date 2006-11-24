@@ -88,21 +88,20 @@ unless (close (PLC)) {
     exit(1);
 }
 
-WriteMakefile(
-    'NAME'		=> 'Language::Prolog::Yaswi::Low',
-    'VERSION_FROM'	=> 'Low.pm',
-    'PREREQ_PM'		=> {},
-    'ABSTRACT_FROM'     => 'Low.pm',
-    'AUTHOR'            => 'Salvador Fandiño <sfandino@yahoo.com>',
-    'LIBS'		=> [$plvar{PLLIBS}],
-    'DEFINE'		=> '',
-    'INC'		=> "-I. $plvar{PLINC}",
-    'OBJECT'            => '$(BASEEXT)$(OBJ_EXT) callback$(OBJ_EXT) callperl$(OBJ_EXT)'.
-	                   ' hook$(OBJ_EXT) perl2swi$(OBJ_EXT) swi2perl$(OBJ_EXT)'.
-	                   ' plconfig$(OBJ_EXT) argv$(OBJ_EXT)'.
-	                   ' query$(OBJ_EXT) vars$(OBJ_EXT) context$(OBJ_EXT)'.
-	                   ' engines$(OBJ_EXT) opaque$(OBJ_EXT)',
-#    'LDDLFLAGS'         => '-export-dynamic',
-     'OPTIMIZE'		=> '-g -O0',
-);
+WriteMakefile( 'NAME' => 'Language::Prolog::Yaswi::Low',
+               'VERSION_FROM' => 'Low.pm',
+               'PREREQ_PM' => {},
+               'ABSTRACT_FROM' => 'Low.pm',
+               'AUTHOR' => 'Salvador Fandiño <sfandino@yahoo.com>',
+               'LIBS' => [$plvar{PLLIBS}],
+               'DEFINE' => '',
+               'INC' => "-I. $plvar{PLINC}",
+               'OBJECT' => ( '$(BASEEXT)$(OBJ_EXT) callback$(OBJ_EXT) callperl$(OBJ_EXT)'.
+                             ' hook$(OBJ_EXT) perl2swi$(OBJ_EXT) swi2perl$(OBJ_EXT)'.
+                             ' plconfig$(OBJ_EXT) argv$(OBJ_EXT)'.
+                             ' query$(OBJ_EXT) vars$(OBJ_EXT) context$(OBJ_EXT)'.
+                             ' engines$(OBJ_EXT) opaque$(OBJ_EXT)' ),
+               # 'LDDLFLAGS' => '-export-dynamic',
+               # 'OPTIMIZE' => '-g -O0'
+             );
 
