@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.14';
+our $VERSION = '0.16';
 
 use strict;
 use warnings;
@@ -573,9 +573,8 @@ explicitely imported.
 =head2 THREADS
 
 To get thread support in this module both Perl and SWI-Prolog have to
-be previously compiled with threads (Perl needs the ithread model
-available from Perl version 5.8.0, the 5.005 threads model is not
-supported).
+be previously compiled with threads. Perl needs the ithread model
+available from Perl version 5.8.0 and upwards.
 
 When Perl is called back from a thread created from Prolog a new fresh
 Perl engine is constructed. That means there will be no modules
@@ -591,7 +590,7 @@ OS. Though it works at least on Linux, Solaris and Windows.
 
 Unicode support is experimental.
 
-Variable attributes are ignored when they cross the Perl/Prolog
+Variable attributes are discarded when they cross the Perl/Prolog
 interface.
 
 =head1 SEE ALSO
@@ -604,7 +603,8 @@ L<AI::Prolog> is a well maintained Prolog implementation in pure Perl.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2006 by Salvador FandiE<ntilde>o E<lt>sfandino@yahoo.comE<gt>
+Copyright 2003-2006, 2008 by Salvador FandiE<ntilde>o
+E<lt>sfandino@yahoo.comE<gt>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

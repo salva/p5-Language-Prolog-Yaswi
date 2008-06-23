@@ -88,7 +88,7 @@ check_error_and_pop_results(pTHX_ pMY_CXT_ term_t t, int n) {
 	return FALSE;
     }
     else {
-	AV *ret=newAV();
+	AV *ret=(AV*)sv2_mortal((SV*)newAV());
 	av_extend(ret, n-1);
 	while(--n>=0) {
 	    SV *sv=POPs;
@@ -131,7 +131,7 @@ static foreign_t swi2perl_sub(term_t name,
 			      term_t args,
 			      term_t result ) {
     MY_dTHX;
-    dMY_CXT;
+    MY_dMY_CXT;
     dSP;
 
     SV *svname = swi2perl_atom_sv_ex(aTHX_ name);
@@ -161,7 +161,7 @@ static foreign_t swi2perl_sub(term_t name,
 static foreign_t swi2perl_eval(term_t code,
 			       term_t result) {
     MY_dTHX;
-    dMY_CXT;
+    MY_dMY_CXT;
     dSP;
     
     SV *svcode = swi2perl_atom_sv_ex(aTHX_ code);
@@ -189,7 +189,7 @@ static foreign_t swi2perl_method(term_t object,
 				 term_t args,
 				 term_t result) {
     MY_dTHX;
-    dMY_CXT;
+    MY_dMY_CXT;
     dSP;
     SV *svmethod = swi2perl_atom_sv_ex(aTHX_ method);
     if (svmethod) {

@@ -47,7 +47,7 @@ CODE:
 void
 yaswi_END()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     /* warn ("calling END code (thread=%i)", PL_thread_self()); */
     release_prolog(aTHX_ aMY_CXT);
@@ -65,7 +65,7 @@ OUTPUT:
 void
 yaswi_start()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     if (PL_is_initialised(NULL, NULL)) {
 	croak ("SWI-Prolog engine already initialised");
@@ -76,7 +76,7 @@ CODE:
 void
 yaswi_cleanup()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     test_no_query(aTHX_ aMY_CXT);
     if (SvIV(c_depth) > 1) {
@@ -88,7 +88,7 @@ CODE:
 int
 yaswi_toplevel()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     RETVAL=PL_toplevel();
@@ -100,7 +100,7 @@ SV *
 yaswi_swi2perl(term)
     SV *term;
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     if (!SvIOK(term)) {
@@ -117,7 +117,7 @@ yaswi_openquery(query_obj, module)
     SV *query_obj;
     SV *module;
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
     term_t q, arg0;
     module_t m;
     predicate_t predicate;
@@ -162,7 +162,7 @@ PPCODE:
 void
 yaswi_cutquery()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     test_query(aTHX_ aMY_CXT);
@@ -171,7 +171,7 @@ CODE:
 int
 yaswi_nextsolution()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     test_query(aTHX_ aMY_CXT); 
@@ -202,7 +202,7 @@ OUTPUT:
 void
 yaswi_testquery()
 PREINIT:
-    dMY_CXT;
+    MY_dMY_CXT;
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     test_query(aTHX_ aMY_CXT);

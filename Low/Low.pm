@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi::Low;
 
-our $VERSION = '0.13';
+our $VERSION = '0.16';
 
 use strict;
 use warnings;
@@ -75,7 +75,7 @@ Language::Prolog::Yaswi::Low - Low level interface to SWI-Prolog
 
 
   # don't use Language::Prolog::Yaswi::Low;
-  use Language::Prolog::Yaswi; #instead ;-)
+  use Language::Prolog::Yaswi; # instead ;-)
 
 =head1 ABSTRACT
 
@@ -99,7 +99,7 @@ L<Language::Prolog::Yaswi>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2006 by Salvador Fandiño (sfandino@yahoo.com).
+Copyright 2003-2006, 2008 by Salvador Fandiño (sfandino@yahoo.com).
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

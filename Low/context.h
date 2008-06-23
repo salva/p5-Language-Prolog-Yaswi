@@ -35,3 +35,8 @@ extern my_cxt_t my_cxt;
 void init_cxt(pTHX);
 
 void release_cxt(pTHX_ pMY_CXT);
+
+my_cxt_t *get_MY_CXT(pTHX);
+
+#define MY_dMY_CXT my_cxt_t *my_cxtp = get_MY_CXT(aTHX)
+

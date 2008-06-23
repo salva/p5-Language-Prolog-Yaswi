@@ -1,5 +1,14 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.16  Jun 08, 2008
+        - opaque marshalling was not working on latest versions (bug
+          reported by William Kisman).
+        - tests for opaque objects added
+
+0.15  May 30, 2008
+        - module updated to compile under perl 5.10.0 (bug reported by
+          William Kisman).
+
 0.14  Nov 24 2006
         - pod error corrected
 
