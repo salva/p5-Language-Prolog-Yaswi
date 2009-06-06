@@ -35,7 +35,6 @@ bug report!).
 
 BUGS
 
-
 Requires SWI-Prolog 5.6.x or newer
 
 Loading of prolog shared libraries doesn't work, this is due to a

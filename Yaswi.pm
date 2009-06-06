@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use strict;
 use warnings;
@@ -241,7 +241,7 @@ Language::Prolog::Yaswi - Yet another interface to SWI-Prolog
 
   use Language::Prolog::Yaswi ':query';
   use Language::Prolog::Types::overload;
-  use Language::Prolog::Sugar functors => { equal => '='
+  use Language::Prolog::Sugar functors => { equal => '=',
                                             is    => 'is' },
                               chains => { orn => ';',
                                           andn => ',',
@@ -254,15 +254,16 @@ Language::Prolog::Yaswi - Yet another interface to SWI-Prolog
 
   while (swi_next) {
       printf "Query=".swi_query()."\n";
-      printf "  X=%_, Y=%_\n\n", swi_var(X), swi_var(Y);
+      printf "  X=%s, Y=%s\n\n", swi_var(X), swi_var(Y);
   }
 
   print join("\n",
              swi_findall(andn(equal(X, 2),
                               orn(equal(Y, 1),
-                                  equal(Y, 3.1416))
+                                  equal(Y, 3.1416)),
                               is(Z, plus(X,Y,Y))),
-                         [X, Y, Z]);
+                         [X, Y, Z]));
+
 
 =head1 ABSTRACT
 

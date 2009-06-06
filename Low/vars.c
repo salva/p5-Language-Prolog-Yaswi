@@ -69,7 +69,7 @@ void set_vars(pTHX_ pMY_CXT_ AV *nrefs, AV *ncells) {
 	if (sv_derived_from(*var, TYPEPKG "::Variable")) {
 	    SV *name=call_method__sv(aTHX_ *var, "name");
 	    char *cname;
-	    int vlen;
+	    size_t vlen;
 	    cname=SvPV(name, vlen);
 	    if (strNE("_", cname)) {
 		SV **cell=av_fetch(ncells, i, 0);

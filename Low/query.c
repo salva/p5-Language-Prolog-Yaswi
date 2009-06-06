@@ -35,7 +35,7 @@ void close_query(pTHX_ pMY_CXT) {
 
 void test_no_query(pTHX_ pMY_CXT) {
     if(SvOK(c_qid)) {
-	croak ("there is already an open query on SWI-Prolog (qid=%_)", c_qid);
+	croak ("there is already an open query on SWI-Prolog (qid=%s)", SvPV_nolen(c_qid));
     }
 }
 

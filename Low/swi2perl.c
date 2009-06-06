@@ -121,7 +121,7 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 }
 
 SV *newSVatom(pTHX_ atom_t a) {
-    unsigned int len;
+    size_t len;
 
     {
         const char *v;
@@ -150,7 +150,7 @@ SV *swi2perl_atom_sv(pTHX_ term_t t) {
 
     {
         char * v;
-        unsigned int len;
+        size_t len;
 
 #ifdef REP_UTF8
         if (PL_get_nchars(t, &len, &v, CVT_STRING|BUF_DISCARDABLE|REP_ISO_LATIN_1)) {

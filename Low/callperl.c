@@ -88,7 +88,7 @@ check_error_and_pop_results(pTHX_ pMY_CXT_ term_t t, int n) {
 	return FALSE;
     }
     else {
-	AV *ret=(AV*)sv2_mortal((SV*)newAV());
+	AV *ret=(AV*)sv_2mortal((SV*)newAV());
 	av_extend(ret, n-1);
 	while(--n>=0) {
 	    SV *sv=POPs;

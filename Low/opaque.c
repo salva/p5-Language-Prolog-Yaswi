@@ -15,7 +15,7 @@ static PL_blob_t perl_opaque;
 static void
 perl_opaque_acquire(atom_t a) {
     dSP;
-    unsigned int len;
+    size_t len;
     PL_blob_t *type;
     SV *sv = PL_blob_data(a, &len, &type);
     assert(sv != NULL);
@@ -26,7 +26,7 @@ perl_opaque_acquire(atom_t a) {
 static int
 perl_opaque_release(atom_t a) {
     dSP;
-    unsigned int len;
+    size_t len;
     PL_blob_t *type;
     SV *sv = PL_blob_data(a, &len, &type);
     assert(sv != NULL);
@@ -39,7 +39,7 @@ static int
 perl_opaque_write(IOSTREAM *s, atom_t a, int flags) {
     dSP;
     STRLEN l;
-    unsigned int len;
+    size_t len;
     PL_blob_t *type;
     SV *sv = PL_blob_data(a, &len, &type);
     assert(sv != NULL);
@@ -97,7 +97,7 @@ pl_unify_perl_opaque(pTHX_ term_t t, SV *o, AV *refs, AV *cells) {
 
 int
 pl_get_perl_opaque(pTHX_ term_t t, SV** ref) {
-    int len;
+    size_t len;
     PL_blob_t *type;
     term_t arg = PL_new_term_ref();
 

@@ -27,9 +27,20 @@ if ($^O=~/Win32/) {
 }
 else {
     if ($plvar{PLVERSION} >= 50400) {
-	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/lib/$plvar{PLARCH}/ -lpl";
+	if ( $Config{myarchname} eq 'x86_64-linux' and
+	     $plvar{PLARCH} eq 'amd64' and
+	     $plvar{PLBASE} eq '/usr/lib/swi-prolog' and
+	     !-f "plvar{PLBASE}/lib/amd64/libpl.so" ) {
+	    print("\nDebian/Ubuntu amd64 SWI-Prolog package bug detected.\n",
+		  "Dynamic library not included under /usr/lib/swi-prolog/amd64/\n",
+		  "Trying to work around...\n\n");
+	}
+	else {
+	    $plvar{PLLIBS} .=" -L$plvar{PLBASE}/lib/$plvar{PLARCH}/";
+	}
+	$plvar{PLLIBS} .= "-lpl";
     }
-    else {	
+    else {
 	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/ ";
 	$plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? '-lplmt' : '-lpl';
     }
@@ -68,7 +79,6 @@ else {
     }
     print "  thread support disabled\n";
 }
-
 
 print "\ncreating plconfig.c\n";
 unless (open (PLC, ">plconfig.c")) {

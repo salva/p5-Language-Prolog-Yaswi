@@ -22,7 +22,7 @@ void args2argv(void) {
     }
     for (i=0; i<PL_argc; i++) {
 	SV **item;
-	int len;
+	size_t len;
 	char *arg;
 	item=av_fetch(args, i, 0);
 	if (item) {

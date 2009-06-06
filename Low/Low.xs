@@ -104,7 +104,7 @@ PREINIT:
 CODE:
     check_prolog(aTHX_ aMY_CXT);
     if (!SvIOK(term)) {
-	croak ("'%_' is not a valid SWI-Prolog term", term);
+	croak ("'%s' is not a valid SWI-Prolog term", SvPV_nolen(term));
     }
     RETVAL=swi2perl(aTHX_ SvIV(term),
 		    get_cells(aTHX_ aMY_CXT));
@@ -151,12 +151,12 @@ PPCODE:
 	}
 	else {
 	    pop_frame(aTHX_ aMY_CXT);
-	    croak("unable to convert perl data to prolog query (%_)", query_obj);
+	    croak("unable to convert perl data to prolog query (%s)", SvPV_nolen(query_obj));
 	}
     }
     else {
 	pop_frame(aTHX_ aMY_CXT);
-	croak("unable to convert perl data to prolog (%_)", query_obj);
+	croak("unable to convert perl data to prolog (%s)", SvPV_nolen(query_obj));
     }
 
 void
