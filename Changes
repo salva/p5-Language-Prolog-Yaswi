@@ -1,6 +1,6 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
-0.17  Jun 06, 2008
+0.17  Jun 06, 2009
         - work around for bug in SWI-Prolog package for Debian/Ubuntu
           on amd64
         - 64bit cleanup
