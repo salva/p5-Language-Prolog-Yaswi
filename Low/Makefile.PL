@@ -2,8 +2,20 @@ use ExtUtils::MakeMaker;
 use Config;
 
 print "retrieving SWI-Prolog configuration:\n";
-my $defaultpl= $^O=~/Win32/ ? 'plcon.exe' : 'pl';
-my $pl=$ENV{PL} || $defaultpl;
+
+if (defined $ENV{PL}) {
+    $pl = $ENV{PL};
+}
+elsif ($^O =~ /Win32/) {
+    $pl = 'plcon.exe';
+}
+elsif (exists $Config{cf_by} and $Config{cf_by} eq 'Debian Project') {
+    $pl = 'swipl';
+}
+else {
+    $pl = 'pl';
+}
+
 print "  running '$pl -dump-runtime-variables'\n";
 my @plvars=`$pl -dump-runtime-variables`;
 if ($?) {
@@ -38,11 +50,11 @@ else {
 	else {
 	    $plvar{PLLIBS} .=" -L$plvar{PLBASE}/lib/$plvar{PLARCH}/";
 	}
-	$plvar{PLLIBS} .= "-lpl";
+	$plvar{PLLIBS} .= " -lpl";
     }
     else {
-	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/ ";
-	$plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? '-lplmt' : '-lpl';
+	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/";
+	$plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? ' -lplmt' : ' -lpl';
     }
 
     # $plvar{PLLIBS}.=' -export-dynamic';

@@ -1,5 +1,10 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.18  Jul 9, 2009
+        - Detect Ubuntu/Debian system and default to 'swipl'
+          executable
+	- Correct bug in Makefile.PL LIBS parameter generation
+
 0.17  Jun 06, 2009
         - work around for bug in SWI-Prolog package for Debian/Ubuntu
           on amd64
