@@ -37,4 +37,5 @@ t/3simple.t
 t/4pods.t
 t/5opaque.t
 Yaswi.pm
+samples/clp.pl
 META.yml                                 Module meta-data (added by MakeMaker)
