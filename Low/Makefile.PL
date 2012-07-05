@@ -36,13 +36,14 @@ my $swipl_version = $plvar{PLVERSION};
 $plvar{PLLIB} = '-lpl' unless defined $plvar{PLLIB};
 
 if ($^O=~/Win32/) {
-    $plvar{PLLIBS}.=qq( -L"$plvar{PLBASE}/lib" $plvar{PLLIB});
-    $plvar{PLINC}=qq(-I"$plvar{PLBASE}/include");
-    $plvar{PLEXE}=qq($plvar{PLBASE}/bin/libpl.dll);
-    $plvar{PLPATH}=qq($plvar{PLBASE}/bin);
+    $plvar{PLLIBS} = qq(-L"$plvar{PLBASE}/lib" $plvar{PLLIB} $plvar{PLLIBS});
+    $plvar{PLINC}  = qq(-I"$plvar{PLBASE}/include");
+    $plvar{PLEXE}  = qq($plvar{PLBASE}/bin/libpl.dll);
+    $plvar{PLPATH} = qq($plvar{PLBASE}/bin);
 }
 else {
     if ($swipl_version >= 50400) {
+	$plvar{PLLIBS} = "$plvar{PLLIB} $plvar{PLLIBS}";
 	if ( $Config{myarchname} eq 'x86_64-linux' and
 	     $plvar{PLARCH} eq 'amd64' and
 	     $plvar{PLBASE} eq '/usr/lib/swi-prolog' and
@@ -52,9 +53,9 @@ else {
 		  "Trying to work around...\n\n");
 	}
 	else {
-	    $plvar{PLLIBS} .=" -L$plvar{PLBASE}/lib/$plvar{PLARCH}/";
+	    $plvar{PLLIBS} ="-L$plvar{PLBASE}/lib/$plvar{PLARCH}/ $plvar{PLLIBS}";
 	}
-	$plvar{PLLIBS} .= " $plvar{PLLIB}";
+
     }
     else {
 	$plvar{PLLIBS}.=" -L$plvar{PLBASE}/runtime/$plvar{PLARCH}/";
