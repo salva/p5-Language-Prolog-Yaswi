@@ -1,6 +1,6 @@
 package Language::Prolog::Yaswi;
 
-our $VERSION = '0.19';
+our $VERSION = '0.20';
 
 use strict;
 use warnings;
@@ -604,7 +604,7 @@ L<AI::Prolog> is a well maintained Prolog implementation in pure Perl.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2003-2006, 2008, 2011 by Salvador FandiE<ntilde>o
+Copyright 2003-2006, 2008, 2011, 2012 by Salvador FandiE<ntilde>o
 E<lt>sfandino@yahoo.comE<gt>
 
 This library is free software; you can redistribute it and/or modify

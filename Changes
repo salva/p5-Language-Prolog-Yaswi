@@ -1,9 +1,13 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.20  Jul 5, 2012
+        - Solve building issue when libswipl is a statically compiled
+          library (bug report by Stephen Cookson)
+
 0.19  Aug 24, 2011
         - SWI-Prolog library name got changed at 5.10 from pl to
           swipl, the correct name is now detected from the runtime
-          (bug report by Steve_BZ via Perlmonks)
+          (bug report Stephen Cookson)
 
 0.18  Jul 9, 2009
         - Detect Ubuntu/Debian system and default to 'swipl'
