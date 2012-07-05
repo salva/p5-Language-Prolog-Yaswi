@@ -3,23 +3,27 @@ use Config;
 
 print "retrieving SWI-Prolog configuration:\n";
 
+my @pl;
 if (defined $ENV{PL}) {
-    $pl = $ENV{PL};
+    @pl = $ENV{PL};
 }
 elsif ($^O =~ /Win32/) {
-    $pl = 'plcon.exe';
-}
-elsif (exists $Config{cf_by} and $Config{cf_by} eq 'Debian Project') {
-    $pl = 'swipl';
+    @pl = 'plcon.exe';
 }
 else {
-    $pl = 'pl';
+    @pl = qw(swipl swi-prolog pl);
 }
 
-print "  running '$pl -dump-runtime-variables'\n";
-my @plvars=`$pl -dump-runtime-variables`;
+my ($pl, @plvars);
+
+for (@pl) {
+    $pl = $_;
+    print "  running '$pl -dump-runtime-variables'\n";
+    @plvars=`$pl -dump-runtime-variables`;
+    $? or last;
+}
 if ($?) {
-    print "unable to run swi-prolog command '$pl': $?\nAborting...\n";
+    print "unable to run swi-prolog: $?\nAborting...\n";
     exit(1);
 }
 
@@ -62,11 +66,20 @@ else {
 	$plvar{PLLIBS}.=($plvar{PLTHREADS} eq 'yes') ? ' -lplmt' : ' -lpl';
     }
 
-    # $plvar{PLLIBS}.=' -export-dynamic';
-    $plvar{PLINC}="-I$plvar{PLBASE}/include";
-    $plvar{PLEXE}="$plvar{PLBASE}/bin/$plvar{PLARCH}/pl";
-    $plvar{PLPATH}="$plvar{PLBASE}/bin/$plvar{PLARCH}/";
+    $plvar{PLINC}     = "-I$plvar{PLBASE}/include";
+    $plvar{PLPATH}    = "$plvar{PLBASE}/bin/$plvar{PLARCH}/";
+
+    if ($pl =~ m|/|) {
+        require File::Spec;
+        $plvar{PLEXE} = File::Spec->rel2abs($pl);
+    }
+    else {
+        $plvar{PLEXE} = $pl;
+    }
+
+
 }
+
 print "\nchecking thread support in Perl and SWI-Prolog:\n";
 if ($plvar{PLTHREADS}=~/y/) {
     if ( !defined($Config::Config{usethreads}) ) {
@@ -128,7 +141,7 @@ WriteMakefile( 'NAME' => 'Language::Prolog::Yaswi::Low',
                              ' plconfig$(OBJ_EXT) argv$(OBJ_EXT)'.
                              ' query$(OBJ_EXT) vars$(OBJ_EXT) context$(OBJ_EXT)'.
                              ' engines$(OBJ_EXT) opaque$(OBJ_EXT)' ),
-               # 'LDDLFLAGS' => '-export-dynamic',
+               'LDDLFLAGS' => "$Config{lddlflags} $plvar{PLLDFLAGS}",
                # 'OPTIMIZE' => '-g -O0'
              );
 
