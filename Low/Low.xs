@@ -215,7 +215,7 @@ CODE:
     if (!SvROK(rv)) {
 	croak ("value passed to ref2int is not a reference");
     }
-    RETVAL=(IV) SvRV(rv);
+    RETVAL = PTR2IV(SvRV(rv));
 OUTPUT:
     RETVAL
 
