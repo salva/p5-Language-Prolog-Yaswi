@@ -258,10 +258,10 @@ Language::Prolog::Yaswi - Yet another interface to SWI-Prolog
   }
 
   print join("\n",
-             swi_findall(andn(equal(X, 2),
+            swi_find_all(andn(equal(X, 2),
                               orn(equal(Y, 1),
                                   equal(Y, 3.1416)),
-                              is(Z, plus(X,Y,Y))),
+                              is(Z, add(X,Y,Y))),
                          [X, Y, Z]));
 
 
