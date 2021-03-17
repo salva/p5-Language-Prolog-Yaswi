@@ -67,6 +67,8 @@ sub init {
 1;
 __END__
 
+=encoding UTF-8
+
 =head1 NAME
 
 Language::Prolog::Yaswi::Low - Low level interface to SWI-Prolog
