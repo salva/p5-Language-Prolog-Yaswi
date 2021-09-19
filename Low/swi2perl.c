@@ -32,10 +32,10 @@ SV *swi2perl(pTHX_ term_t t, AV *cells) {
 	return newSVnv(v);
     }
     case PL_STRING:
-    /*case PL_NIL:*/
     case PL_ATOM: {
         return swi2perl_atom_sv(aTHX_ t);
     }
+    case PL_NIL:
     case PL_LIST_PAIR: {
         AV *array=newAV();
         SV *ref=newRV_noinc((SV *)array);
