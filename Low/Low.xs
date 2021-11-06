@@ -1,11 +1,5 @@
 #define PERL_NO_GET_CONTEXT
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-#include "ppport.h"
-
-#include <SWI-Prolog.h>
+#include "SWI-Prolog-Perl-compat.h"
 
 #include "context.h"
 #include "plconfig.h"

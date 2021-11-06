@@ -1,11 +1,5 @@
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-
-#include "ppport.h"
-
+#include "SWI-Prolog-Perl-compat.h"
 #include <SWI-Stream.h>
-#include <SWI-Prolog.h>
 
 #include "opaque.h"
 #include "callback.h"
