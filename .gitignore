@@ -1,0 +1,13 @@
+Language-Prolog-Yaswi-*
+
+Low/Low.bs
+Low/Low.c
+
+*.o
+blib/
+MYMETA.json
+MYMETA.yml
+Makefile
+Makefile.old
+Low/plconfig.c
+pm_to_blib
