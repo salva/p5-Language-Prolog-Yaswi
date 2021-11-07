@@ -57,11 +57,11 @@ jobs:
           - swipl:8.0.3
           - swipl:8.1.0
           - swipl:8.1.15
-          #- swipl:8.1.30
-          #- swipl:8.2.4
-          #- swipl:8.3.29
-          #- swipl:8.4.0
-          #- swipl:stable
+          - swipl:8.1.30
+          - swipl:8.2.4
+          - swipl:8.3.29
+          - swipl:8.4.0
+          - swipl:stable
     name: Perl ${{ matrix.perl }} with swipl container ${{ matrix.container }}
 
     steps:
