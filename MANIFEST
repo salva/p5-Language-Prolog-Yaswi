@@ -29,6 +29,7 @@ Low/vars.c
 Low/vars.h
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 pl.pl
 README
 t/1Low.t
