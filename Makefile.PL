@@ -1,6 +1,21 @@
 use 5.006;
 use ExtUtils::MakeMaker;
 
+my %hash;
+
+my $github_slug = 'salva/p5-Language-Prolog-Yaswi';
+$hash{META_MERGE} = {
+  "meta-spec" => { version => 2 },
+  resources => {
+    bugtracker  => { web => "https://github.com/$github_slug/issues" },
+    repository  => {
+       url => "git://github.com/$github_slug.git",
+       type => 'git',
+       web => "https://github.com/$github_slug",
+    },
+  },
+};
+
 WriteMakefile(
     'NAME'		=> 'Language::Prolog::Yaswi',
     'VERSION_FROM'	=> 'Yaswi.pm',
@@ -10,4 +25,5 @@ WriteMakefile(
     'OPTIMIZE'          => '-g -O0',
     'ABSTRACT_FROM'     => 'Yaswi.pm',
     'AUTHOR'            => 'Salvador Fandiño <sfandino@yahoo.com>',
+    %hash,
 );
