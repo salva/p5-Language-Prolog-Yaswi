@@ -1,3 +1,4 @@
+use utf8;
 use ExtUtils::MakeMaker;
 use Config;
 
@@ -135,7 +136,7 @@ WriteMakefile( 'NAME' => 'Language::Prolog::Yaswi::Low',
                'VERSION_FROM' => 'Low.pm',
                'PREREQ_PM' => {},
                'ABSTRACT_FROM' => 'Low.pm',
-               'AUTHOR' => 'Salvador Fandiño <sfandino@yahoo.com>',
+               'AUTHOR' => 'Salvador FandiÃ±o <sfandino@yahoo.com>',
                'LIBS' => [$plvar{PLLIBS}],
                'DEFINE' => '',
                'INC' => "-I. $plvar{PLINC}",

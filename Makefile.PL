@@ -1,4 +1,5 @@
 use 5.006;
+use utf8;
 use ExtUtils::MakeMaker;
 
 my %hash;
@@ -24,6 +25,6 @@ WriteMakefile(
 			     Test::More => 0, },
     'OPTIMIZE'          => '-g -O0',
     'ABSTRACT_FROM'     => 'Yaswi.pm',
-    'AUTHOR'            => 'Salvador Fandiño <sfandino@yahoo.com>',
+    'AUTHOR'            => 'Salvador FandiÃ±o <sfandino@yahoo.com>',
     %hash,
 );
