@@ -36,7 +36,7 @@ jobs:
           cpanm --verbose --notest --installdeps .
       - name: Install Perl author deps
         run: |
-          cpanm --notest Test::Pod
+          cpanm --notest --installdeps --with-develop .
       - name: Run tests
         run: |
           cpanm --verbose --test-only .
@@ -80,7 +80,7 @@ jobs:
           cpanm --verbose --notest --installdeps .
       - name: Install Perl author deps
         run: |
-          cpanm --notest Test::Pod
+          cpanm --notest --installdeps --with-develop .
       - name: Run tests
         run: |
           cpanm --verbose --test-only .

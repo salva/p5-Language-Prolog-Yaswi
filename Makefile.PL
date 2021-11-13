@@ -15,14 +15,23 @@ $hash{META_MERGE} = {
        web => "https://github.com/$github_slug",
     },
   },
+  prereqs => {
+    develop => {
+      requires => {
+        'Test::Pod'      => '1.00',
+      },
+    },
+  },
 };
 
 WriteMakefile(
     'NAME'		=> 'Language::Prolog::Yaswi',
     'VERSION_FROM'	=> 'Yaswi.pm',
     'PREREQ_PM'		=> { Language::Prolog::Types => '0.09',
-			     Language::Prolog::Sugar => '0.03',
-			     Test::More => 0, },
+			     Language::Prolog::Sugar => '0.03', },
+    TEST_REQUIRES => {
+        'Test::More'                 => '0',
+    },
     'OPTIMIZE'          => '-g -O0',
     'ABSTRACT_FROM'     => 'Yaswi.pm',
     'AUTHOR'            => 'Salvador Fandiño <sfandino@yahoo.com>',
