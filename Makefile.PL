@@ -27,6 +27,9 @@ $hash{META_MERGE} = {
 WriteMakefile(
     'NAME'		=> 'Language::Prolog::Yaswi',
     'VERSION_FROM'	=> 'Yaswi.pm',
+    CONFIGURE_REQUIRES  => {
+        'Alien::SWIProlog'           => '0',
+    },
     'PREREQ_PM'		=> { Language::Prolog::Types => '0.09',
 			     Language::Prolog::Sugar => '0.03', },
     TEST_REQUIRES => {

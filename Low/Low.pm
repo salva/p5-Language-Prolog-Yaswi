@@ -53,6 +53,7 @@ $dl_load_flags = 0x1 unless defined $dl_load_flags;
 sub dl_load_flags { $dl_load_flags }
 
 require DynaLoader;
+use Alien::SWIProlog;
 __PACKAGE__->bootstrap;
 
 our @args;

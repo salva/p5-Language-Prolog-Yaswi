@@ -33,6 +33,7 @@ jobs:
           sudo apt-get install swi-prolog
       - name: Install Perl deps
         run: |
+          cpanm --notest --dev Alien::SWIProlog # configure requires
           cpanm --verbose --notest --installdeps .
       - name: Install Perl author deps
         run: |
@@ -77,6 +78,7 @@ jobs:
       - run: perl -V
       - name: Install Perl deps
         run: |
+          cpanm --notest --dev Alien::SWIProlog # configure requires
           cpanm --verbose --notest --installdeps .
       - name: Install Perl author deps
         run: |
