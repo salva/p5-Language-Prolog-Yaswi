@@ -13,6 +13,7 @@
 #include "engines.h"
 
 void check_prolog(pTHX_ pMY_CXT) {
+    MY_dMY_CXT_accessor;
     if (!c_prolog_ok) {
 	if(!PL_is_initialised(NULL, NULL)) {
 	    args2argv();
@@ -36,6 +37,7 @@ void check_prolog(pTHX_ pMY_CXT) {
 }
 
 void release_prolog(pTHX_ pMY_CXT) {
+    MY_dMY_CXT_accessor;
     if (c_prolog_ok && c_prolog_init) {
 #ifdef MULTIPLICITY
 	/* warn ("destroying Prolog engine"); */
