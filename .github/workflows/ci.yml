@@ -17,15 +17,30 @@ jobs:
         os: ['ubuntu-latest']
         perl: [ '5.20', '5.34' ]
         thread: [ 'true', 'false' ]
+        include:
+          - { os: 'windows-latest', perl: '5', thread: true  }
+          - { os: 'macos-latest',   perl: '5', thread: false }
     name: Perl ${{ matrix.perl }},thr-${{ matrix.thread }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
       - name: Set up perl
+        if: runner.os != 'Windows'
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
           multi-thread: ${{ matrix.thread }}
+      - name: Set up perl
+        if: runner.os == 'Windows'
+        uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: ${{ matrix.perl }}
+          distribution: 'strawberry'
+      - name: PERL_CPANM_HOME short path to avoid MAX_PATH
+        if: runner.os == 'Windows'
+        run: |
+          mkdir C:\tmp\.cpanm
+          echo "PERL_CPANM_HOME=C:/tmp/.cpanm" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - run: perl -V
       #- name: install SWI-Prolog
       #  if: matrix.os == 'ubuntu-latest'
