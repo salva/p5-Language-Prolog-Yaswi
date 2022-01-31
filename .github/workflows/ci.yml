@@ -58,25 +58,46 @@ jobs:
           - swipl:8.0.3
           - swipl:8.1.0
           - swipl:8.1.15
-          #- swipl:8.1.30
-          #- swipl:8.2.4
-          #- swipl:8.3.29
-          #- swipl:8.4.0
-          #- swipl:stable
-    name: Perl ${{ matrix.perl }} with swipl container ${{ matrix.container }}
+          # The following containers have the conflicting symbol
+          # PL_version. See <https://github.com/salva/p5-Language-Prolog-Yaswi/issues/3>.
+          - swipl:8.1.30
+          - swipl:8.2.4
+          - swipl:8.3.29
+          - swipl:8.4.0
+          - swipl:stable
+        include:
+          # Include a version that would usually be a system install, but the
+          # threading of SWI-Prolog and Perl does not match so must build a share
+          # install.
+          - { perl: '5', thread: false, container: 'swipl:7.5.15' }
+    name: Perl ${{ matrix.perl }},thr-${{ matrix.thread }} with swipl container ${{ matrix.container }}
 
     steps:
       - uses: actions/checkout@v2
       - name: Get pre-reqs for steps
         run: |
-          apt-get update && apt-get install -y build-essential xz-utils curl cmake
-          # from <https://github.com/horta/zstd.install>
+          apt-get update && apt-get install -y build-essential xz-utils curl \
+            zlib1g-dev libarchive-dev libssl-dev openssl
+
+
+          # Install newer zstd needed for actions-setup-perl.
+          # From <https://github.com/horta/zstd.install>.
+          # This needs cmake.
+          apt-get install -y cmake
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/horta/zstd.install/main/install)"
+
+          # Now uninstall cmake system package for the following steps since it
+          # is too old for building SWI-Prolog from source.  Will use
+          # Alien::cmake3 to get newer version.
+          apt-get remove -y cmake
       - name: Set up perl
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
           multi-thread: ${{ matrix.thread }}
+      - name: Move openssl binary that is part of actions-setup-perl
+        run: |
+          which -a openssl | grep /hostedtoolcache/perl/ | xargs -I{} mv {} {}~
       - run: perl -V
       - name: Install Perl deps
         run: |
