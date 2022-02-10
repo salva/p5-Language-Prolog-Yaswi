@@ -43,7 +43,7 @@ void release_prolog(pTHX_ pMY_CXT) {
 	/* warn ("destroying Prolog engine"); */
 	PL_thread_destroy_engine();
 #else
-	warn ("Prolog cleanup");
+	/* warn ("Prolog cleanup"); */
 	PL_cleanup(0);
 #endif
 	c_prolog_init=0;
