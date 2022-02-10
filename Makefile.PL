@@ -28,12 +28,12 @@ WriteMakefile(
     'NAME'              => 'Language::Prolog::Yaswi',
     'VERSION_FROM'      => 'Yaswi.pm',
     CONFIGURE_REQUIRES  => {
-        'Alien::SWIProlog'        => '0',
+        'Alien::SWIProlog'        => '0.002',
     },
     'PREREQ_PM'         => {
         'Language::Prolog::Types' => '0.09',
         'Language::Prolog::Sugar' => '0.03',
-        'Alien::SWIProlog'        => '0',
+        'Alien::SWIProlog'        => '0.002',
     },
     TEST_REQUIRES => {
         'Test::More'              => '0',
