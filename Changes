@@ -1,5 +1,8 @@
 Revision history for Perl extension Language::Prolog::Yaswi.
 
+0.23 2022-02-12 13:04:35-0500
+        - No change from v0.22_01.
+
 0.22_01 2022-02-10 12:44:15-0500
         - Fix typos (thanks to @mohawk2 for the report).
         - Update ppport.h using Devel::PPPort v3.63 (Zakariyya Mughal
